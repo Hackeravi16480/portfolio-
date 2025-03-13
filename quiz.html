@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Master</title>
+    <style>
+        :root {
+            --primary-color: #6c63ff;
+            --secondary-color: #ff6584;
+            --background-color: #f9f9f9;
+            --text-color: #333;
+            --correct-color: #4caf50;
+            --wrong-color: #f44336;
+            --neutral-color: #9e9e9e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.5s ease;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 800px;
+            margin: 2rem auto;
+            flex: 1;
+        }
+
+        header {
+            text-align: center;
+            padding: 1.5rem 0;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            animation: fadeInDown 0.8s;
+        }
+
+        .subtitle {
+            color: var(--neutral-color);
+            font-size: 1.2rem;
+            animation: fadeIn 1s 0.3s both;
+        }
+
+        .start-screen, .question-container, .results-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            margin: 2rem 0;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s 0.5s forwards;
+        }
+
+        .start-screen {
+            text-align: center;
+        }
+
+        .category-selector {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin: 2rem 0;
+        }
+
+        .category-btn {
+            background-color: white;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .category-btn:hover, .category-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 4px 10px rgba(108, 99, 255, 0.3);
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin-top: 1.5rem;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background-color: #5852e0;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(108, 99, 255, 0.4);
+        }
+
+        .question-container {
+            display: none;
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #f1f1f1;
+            border-radius: 10px;
+            height: 10px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 10px;
+        }
+
+        .question {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            line-height: 1.5;
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .option {
+            background-color: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .option.correct {
+            background-color: var(--correct-color);
+            color: white;
+            border-color: var(--correct-color);
+        }
+
+        .option.incorrect {
+            background-color: var(--wrong-color);
+            color: white;
+            border-color: var(--wrong-color);
+        }
+
+        .results-container {
+            display: none;
+            text-align: center;
+        }
+
+        .score-display {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin: 1rem 0;
+        }
+
+        .score-text {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-title {
+            color: var(--neutral-color);
+        }
+
+        .results-actions {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .ripple {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+        }
+
+        @media (min-width: 768px) {
+            .options {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes ripple {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* Dark Mode Styles */
+        body.dark-mode {
+            --background-color: #1f1f1f;
+            --text-color: #f1f1f1;
+        }
+
+        body.dark-mode .start-screen,
+        body.dark-mode .question-container,
+        body.dark-mode .results-container {
+            background-color: #2d2d2d;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        body.dark-mode .category-btn {
+            background-color: #2d2d2d;
+        }
+
+        body.dark-mode .option {
+            background-color: #2d2d2d;
+            border-color: #444;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="themeToggle">🌙</button>
+    
+    <div class="container">
+        <header>
+            <h1>Quiz Master</h1>
+            <p class="subtitle">Test your knowledge!</p>
+        </header>
+
+        <!-- Start Screen -->
+        <div class="start-screen" id="startScreen">
+            <h2>Choose a category</h2>
+            <div class="category-selector">
+                <button class="category-btn active" data-category="general">General Knowledge</button>
+                <button class="category-btn" data-category="science">Science</button>
+                <button class="category-btn" data-category="history">History</button>
+                <button class="category-btn" data-category="geography">Geography</button>
+            </div>
+            <button class="btn" id="startButton">Start Quiz</button>
+        </div>
+
+        <!-- Question Container -->
+        <div class="question-container" id="questionContainer">
+            <div class="question-header">
+                <div class="question-count">Question <span id="currentQuestion">1</span>/<span id="totalQuestions">10</span></div>
+                <div class="timer" id="timer">00:30</div>
+            </div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <h2 class="question" id="questionText">What is the capital of France?</h2>
+            <div class="options" id="optionsContainer">
+                <div class="option" data-index="0">Paris</div>
+                <div class="option" data-index="1">London</div>
+                <div class="option" data-index="2">Berlin</div>
+                <div class="option" data-index="3">Rome</div>
+            </div>
+        </div>
+
+        <!-- Results Container -->
+        <div class="results-container" id="resultsContainer">
+            <h2>Quiz Results</h2>
+            <div class="score-display" id="scoreDisplay">8/10</div>
+            <p class="score-text" id="scoreText">Great job! You're a knowledge master!</p>
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="correctAnswers">8</div>
+                    <div class="stat-title">Correct</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="incorrectAnswers">2</div>
+                    <div class="stat-title">Incorrect</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="accuracyPercent">80%</div>
+                    <div class="stat-title">Accuracy</div>
+                </div>
+            </div>
+            <div class="results-actions">
+                <button class="btn" id="restartButton">Play Again</button>
+                <button class="btn btn-outline" id="homeButton">Back to Home</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Quiz Data
+        const quizData = {
+            general: [
+                {
+                    question: "What is the capital of France?",
+                    options: ["Paris", "London", "Berlin", "Madrid"],
+                    answer: 0
+                },
+                {
+                    question: "Which planet is known as the Red Planet?",
+                    options: ["Earth", "Venus", "Mars", "Jupiter"],
+                    answer: 2
+                },
+                {
+                    question: "Who painted the Mona Lisa?",
+                    options: ["Vincent van Gogh", "Pablo Picasso", "Leonardo da Vinci", "Michelangelo"],
+                    answer: 2
+                },
+                {
+                    question: "What is the largest ocean on Earth?",
+                    options: ["Atlantic Ocean", "Indian Ocean", "Arctic Ocean", "Pacific Ocean"],
+                    answer: 3
+                },
+                {
+                    question: "Which element has the chemical symbol 'O'?",
+                    options: ["Gold", "Oxygen", "Osmium", "Oganesson"],
+                    answer: 1
+                },
+                {
+                    question: "In which year did World War II end?",
+                    options: ["1943", "1945", "1947", "1950"],
+                    answer: 1
+                },
+                {
+                    question: "Who wrote 'Romeo and Juliet'?",
+                    options: ["Charles Dickens", "Jane Austen", "William Shakespeare", "Mark Twain"],
+                    answer: 2
+                },
+                {
+                    question: "What is the tallest mountain in the world?",
+                    options: ["K2", "Mount Kilimanjaro", "Mount Everest", "Mount Fuji"],
+                    answer: 2
+                },
+                {
+                    question: "Which country is known as the Land of the Rising Sun?",
+                    options: ["China", "South Korea", "Thailand", "Japan"],
+                    answer: 3
+                },
+                {
+                    question: "What is the hardest natural substance on Earth?",
+                    options: ["Gold", "Iron", "Diamond", "Platinum"],
+                    answer: 2
+                }
+            ],
+            science: [
+                {
+                    question: "What is the chemical symbol for gold?",
+                    options: ["Go", "Gd", "Au", "Ag"],
+                    answer: 2
+                },
+                {
+                    question: "What is the smallest unit of matter?",
+                    options: ["Atom", "Electron", "Neutron", "Quark"],
+                    answer: 0
+                },
+                {
+                    question: "Which vitamin is produced when your skin is exposed to sunlight?",
+                    options: ["Vitamin A", "Vitamin C", "Vitamin D", "Vitamin K"],
+                    answer: 2
+                },
+                {
+                    question: "What force keeps planets in orbit around the sun?",
+                    options: ["Magnetic force", "Nuclear force", "Gravitational force", "Centrifugal force"],
+                    answer: 2
+                },
+                {
+                    question: "What is the speed of light in a vacuum?",
+                    options: ["300,000 km/s", "150,000 km/s", "1,000,000 km/s", "3,000 km/s"],
+                    answer: 0
+                },
+                {
+                    question: "Which gas do plants primarily absorb from the atmosphere?",
+                    options: ["Oxygen", "Carbon Dioxide", "Nitrogen", "Hydrogen"],
+                    answer: 1
+                },
+                {
+                    question: "What is the human body's largest organ?",
+                    options: ["Liver", "Brain", "Skin", "Heart"],
+                    answer: 2
+                },
+                {
+                    question: "What type of energy is stored in a battery?",
+                    options: ["Kinetic energy", "Thermal energy", "Chemical energy", "Nuclear energy"],
+                    answer: 2
+                },
+                {
+                    question: "What is the study of fossils called?",
+                    options: ["Archaeology", "Paleontology", "Geology", "Anthropology"],
+                    answer: 1
+                },
+                {
+                    question: "What is the process by which plants make their own food?",
+                    options: ["Photosynthesis", "Respiration", "Fermentation", "Digestion"],
+                    answer: 0
+                }
+            ],
+            history: [
+                {
+                    question: "Who was the first President of the United States?",
+                    options: ["Thomas Jefferson", "John Adams", "George Washington", "Abraham Lincoln"],
+                    answer: 2
+                },
+                {
+                    question: "In which year did Christopher Columbus first reach the Americas?",
+                    options: ["1492", "1592", "1392", "1292"],
+                    answer: 0
+                },
+                {
+                    question: "Which ancient civilization built the Machu Picchu?",
+                    options: ["Aztecs", "Incas", "Mayans", "Egyptians"],
+                    answer: 1
+                },
+                {
+                    question: "Who was the first woman to win a Nobel Prize?",
+                    options: ["Marie Curie", "Rosalind Franklin", "Jane Goodall", "Ada Lovelace"],
+                    answer: 0
+                },
+                {
+                    question: "Which war is also known as 'The Great War'?",
+                    options: ["The Vietnam War", "The American Civil War", "World War I", "World War II"],
+                    answer: 2
+                },
+                {
+                    question: "In which year did the Berlin Wall fall?",
+                    options: ["1987", "1989", "1991", "1993"],
+                    answer: 1
+                },
+                {
+                    question: "Who was the first Emperor of Rome?",
+                    options: ["Julius Caesar", "Augustus", "Nero", "Constantine"],
+                    answer: 1
+                },
+                {
+                    question: "Which country was formerly known as Persia?",
+                    options: ["Iraq", "Turkey", "Iran", "Egypt"],
+                    answer: 2
+                },
+                {
+                    question: "The Renaissance period primarily began in which country?",
+                    options: ["France", "England", "Italy", "Spain"],
+                    answer: 2
+                },
+                {
+                    question: "Who wrote 'The Communist Manifesto'?",
+                    options: ["Vladimir Lenin", "Joseph Stalin", "Karl Marx and Friedrich Engels", "Leon Trotsky"],
+                    answer: 2
+                }
+            ],
+            geography: [
+                {
+                    question: "What is the largest country by land area?",
+                    options: ["China", "United States", "Canada", "Russia"],
+                    answer: 3
+                },
+                {
+                    question: "Which mountain range separates Europe and Asia?",
+                    options: ["The Alps", "The Andes", "The Urals", "The Himalayas"],
+                    answer: 2
+                },
+                {
+                    question: "What is the longest river in the world?",
+                    options: ["Amazon River", "Nile River", "Mississippi River", "Yangtze River"],
+                    answer: 1
+                },
+                {
+                    question: "Which country has the largest population?",
+                    options: ["India", "China", "United States", "Indonesia"],
+                    answer: 1
+                },
+                {
+                    question: "What is the driest desert on Earth?",
+                    options: ["Sahara Desert", "Gobi Desert", "Atacama Desert", "Kalahari Desert"],
+                    answer: 2
+                },
+                {
+                    question: "Which country is both in Europe and Asia?",
+                    options: ["Russia", "Turkey", "Both A & B", "Ukraine"],
+                    answer: 2
+                },
+                {
+                    question: "What is the capital of Australia?",
+                    options: ["Sydney", "Melbourne", "Perth", "Canberra"],
+                    answer: 3
+                },
+                {
+                    question: "Which ocean is the Mariana Trench located in?",
+                    options: ["Atlantic Ocean", "Indian Ocean", "Pacific Ocean", "Arctic Ocean"],
+                    answer: 2
+                },
+                {
+                    question: "Which African country has the most pyramids?",
+                    options: ["Egypt", "Sudan", "Libya", "Algeria"],
+                    answer: 1
+                },
+                {
+                    question: "What is the smallest country in the world?",
+                    options: ["Monaco", "Liechtenstein", "San Marino", "Vatican City"],
+                    answer: 3
+                }
+            ]
+        };
+
+        // DOM Elements
+        const startScreen = document.getElementById('startScreen');
+        const questionContainer = document.getElementById('questionContainer');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const startButton = document.getElementById('startButton');
+        const restartButton = document.getElementById('restartButton');
+        const homeButton = document.getElementById('homeButton');
+        const categoryButtons = document.querySelectorAll('.category-btn');
+        const currentQuestionElement = document.getElementById('currentQuestion');
+        const totalQuestionsElement = document.getElementById('totalQuestions');
+        const progressBar = document.getElementById('progressBar');
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const timerElement = document.getElementById('timer');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const scoreText = document.getElementById('scoreText');
+        const correctAnswersElement = document.getElementById('correctAnswers');
+        const incorrectAnswersElement = document.getElementById('incorrectAnswers');
+        const accuracyPercentElement = document.getElementById('accuracyPercent');
+        const themeToggle = document.getElementById('themeToggle');
+
+        // Quiz State
+        let currentCategory = 'general';
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let timerInterval;
+        let timeLeft = 30;
+        let canAnswer = true;
+
+        // Initialize the quiz
+        function initQuiz() {
+            // Shuffle and get questions for selected category
+            currentQuestions = [...quizData[currentCategory]].sort(() => Math.random() - 0.5);
+            totalQuestionsElement.textContent = currentQuestions.length;
+            
+            // Reset quiz state
+            currentQuestionIndex = 0;
+            score = 0;
+            
+            // Display first question
+            displayQuestion();
+            
+            // Show question container
+            startScreen.style.display = 'none';
+            questionContainer.style.display = 'block';
+            resultsContainer.style.display = 'none';
+            
+            // Reset for animation
+            questionContainer.style.opacity = '0';
+            questionContainer.style.transform = 'translateY(20px)';
+            
+            // Trigger animation
+            setTimeout(() => {
+                questionContainer.style.opacity = '1';
+                questionContainer.style.transform = 'translateY(0)';
+            }, 10);
+        }
+
+        // Display current question
+        function displayQuestion() {
+            // Update question number
+            currentQuestionElement.textContent = currentQuestionIndex + 1;
+            
+            // Update progress bar
+            const progressPercent = (currentQuestionIndex / currentQuestions.length) * 100;
+            progressBar.style.width = `${progressPercent}%`;
+            
+            // Get current question
+            const currentQuestion = currentQuestions[currentQuestionIndex];
+            
+            // Set question text
+            questionText.textContent = currentQuestion.question;
+            
+            // Clear options
+            optionsContainer.innerHTML = '';
+            
+            // Add options
+            currentQuestion.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.classList.add('option');
+                optionElement.setAttribute('data-index', index);
+                optionElement.textContent = option;
+                optionElement.addEventListener('click', checkAnswer);
+                optionsContainer.appendChild(optionElement);
+            });
+            
+            // Reset timer
+            timeLeft = 30;
+            updateTimer();
+            clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            // Enable answering
+            canAnswer = true;
+        }
+
+        // Update timer
+        function updateTimer() {
+            const seconds = timeLeft < 10 ? `0${timeLeft}` : timeLeft;
+            timerElement.textContent = `00:${seconds}`;
+            
+            if (timeLeft <= 5) {
+                timerElement.style.color = 'red';
+            } else {
+                timerElement.style.color = '';
+            }
+            
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                timeOut();
+            } else {
+                timeLeft--;
+            }
+        }
+
+        // Handle time out
+        function timeOut() {
+            canAnswer = false;
+            
+            // Show correct answer
+            const correctAnswerIndex = currentQuestions[currentQuestionIndex].answer;
+            const options = document.querySelectorAll('.option');
+            
+            options.forEach((option, index) => {
+                if (index === correctAnswerIndex) {
+                    option.classList.add('correct');
+                }
+            });
+            
+            // Move to next question after delay
+            setTimeout(nextQuestion, 1500);
+        }
+
+        // Check answer
+        function checkAnswer(event) {
+            if (!canAnswer) return;
+            
+            canAnswer = false;
+            clearInterval(timerInterval);
+            
+            const selectedOption = event.currentTarget;
+            const selectedIndex = parseInt(selectedOption.getAttribute('data-index'));
+            const correctIndex = currentQuestions[currentQuestionIndex].answer;
+            
+            // Create ripple effect
+            const ripple = document.createElement('span');
+            ripple.classList.add('ripple');
+            selectedOption.appendChild(ripple);
+            
+            const rect = selectedOption.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            ripple.style.left = `${x}px`;
+            ripple.style.top = `${y}px`;
+            
+            // Check if answer is correct
+            if (selectedIndex === correctIndex) {
+                selectedOption.classList.add('correct');
+                score++;
+            } else {
+                selectedOption.classList.add('incorrect');
+                
+                // Show correct answer
+                const options = document.querySelectorAll('.option');
+                options[correctIndex].classList.add('correct');
+            }
+            
+            // Move to next question after delay
+            setTimeout(nextQuestion, 1500);
+        }
+
+        // Move to next question or end quiz
+        function nextQuestion() {
+            currentQuestionIndex++;
+            
+            if (currentQuestionIndex < currentQuestions.length) {
+                displayQuestion();
+            } else {
+                endQuiz();
+            }
+        }
+
+        // End quiz and show results
+        function endQuiz() {
+            // Clear timer
+            clearInterval(timerInterval);
+            
+            // Calculate statistics
+            const totalQuestions = currentQuestions.length;
+            const correctAnswers = score;
+            const incorrectAnswers = totalQuestions - score;
+            const accuracy = Math.round((score / totalQuestions) * 100);
+            
+            // Update results
+            scoreDisplay.textContent = `${score}/${totalQuestions}`;
+            correctAnswersElement.textContent = correctAnswers;
+            incorrectAnswersElement.textContent = incorrectAnswers;
+            accuracyPercentElement.textContent = `${accuracy}%`;
+            
+            // Set score text based on performance
+            if (accuracy >= 80) {
+                scoreText.textContent = "Excellent! You're a quiz master!";
+            } else if (accuracy >= 60) {
+                scoreText.textContent = "Good job! You have solid knowledge!";
+            } else if (accuracy >= 40) {
+                scoreText.textContent = "Not bad, but there's room for improvement.";
+            } else {
+                scoreText.textContent = "Keep learning! You'll do better next time.";
+            }
+            
+            // Hide question container, show results
+            questionContainer.style.display = 'none';
+            resultsContainer.style.display = 'block';
+            
+            // Reset for animation
+            resultsContainer.style.opacity = '0';
+            resultsContainer.style.transform = 'translateY(20px)';
+            
+            // Trigger animation
+            setTimeout(() => {
+                resultsContainer.style.opacity = '1';
+                resultsContainer.style.transform = 'translateY(0)';
+            }, 10);
+        }
+
+        // Add event listeners
+        startButton.addEventListener('click', initQuiz);
+        
+        restartButton.addEventListener('click', () => {
+            initQuiz();
+        });
+        
+        homeButton.addEventListener('click', () => {
+            resultsContainer.style.display = 'none';
+            startScreen.style.display = 'block';
+            
+            // Reset for animation
+            startScreen.style.opacity = '0';
+            startScreen.style.transform = 'translateY(20px)';
+            
+            // Trigger animation
+            setTimeout(() => {
+                startScreen.style.opacity = '1';
+                startScreen.style.transform = 'translateY(0)';
+            }, 10);
+        });
+        
+        // Category selection
+        categoryButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons
+                categoryButtons.forEach(btn => btn.classList.remove('active'));
+                
+                // Add active class to clicked button
+                button.classList.add('active');
+                
+                // Set current category
+                currentCategory = button.getAttribute('data-category');
+            });
+        });
+        
+        // Theme toggle
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            themeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        });
+
+        // Add button click animations
+        const buttons = document.querySelectorAll('.btn, .category-btn');
+        buttons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                const ripple = document.createElement('span');
+                ripple.classList.add('ripple');
+                button.appendChild(ripple);
+                
+                const rect = button.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                ripple.style.left = `${x}px`;
+                ripple.style.top = `${y}px`;
+                
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            });
+        });
+    </script>
+</body>
+</html>
