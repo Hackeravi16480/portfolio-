@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake Terminal Simulator</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            height: 100vh;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        #terminal {
+            width: 100%;
+            height: calc(100vh - 40px);
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        #command-line {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        #prompt {
+            margin-right: 5px;
+        }
+        #input {
+            background-color: transparent;
+            border: none;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: inherit;
+            flex-grow: 1;
+            outline: none;
+        }
+        .output {
+            margin-top: 5px;
+            margin-bottom: 15px;
+        }
+        .cursor {
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="terminal"></div>
+    <div id="command-line">
+        <span id="prompt">user@faketerminal:~$</span>
+        <input type="text" id="input" autofocus>
+    </div>
+
+    <script>
+        const terminal = document.getElementById('terminal');
+        const input = document.getElementById('input');
+        const prompt = document.getElementById('prompt');
+        
+        const username = 'user';
+        const hostname = 'faketerminal';
+        const currentDir = '~';
+        
+        const files = {
+            '/home/user': ['Documents', 'Downloads', 'Pictures', 'Music', 'Videos', '.bashrc', '.profile'],
+            '/home/user/Documents': ['notes.txt', 'todo.md', 'project_ideas.txt'],
+            '/home/user/Downloads': ['archive.zip', 'image.jpg', 'report.pdf'],
+            '/home/user/Pictures': ['vacation.jpg', 'family.png', 'screenshot.png'],
+            '/home/user/Music': ['favorite_song.mp3', 'playlist.m3u'],
+            '/home/user/Videos': ['tutorial.mp4', 'funny_cat.mp4']
+        };
+        
+        const fileContents = {
+            '/home/user/.bashrc': '# ~/.bashrc\n\n# If not running interactively, don\'t do anything\n[[ $- != *i* ]] && return\n\nalias ls=\'ls --color=auto\'\nalias grep=\'grep --color=auto\'\nPS1=\'\\[\\033[01;32m\\]\\u@\\h\\[\\033[00m\\]:\\[\\033[01;34m\\]\\w\\[\\033[00m\\]\\$ \'',
+            '/home/user/Documents/notes.txt': 'Meeting Notes - March 20, 2025\n\n- Project Alpha deadline extended to April 15\n- New team member joining next week\n- Budget approval pending',
+            '/home/user/Documents/todo.md': '# TODO List\n\n- [x] Update resume\n- [ ] Call dentist\n- [ ] Finish project proposal\n- [ ] Buy groceries',
+            '/home/user/Documents/project_ideas.txt': '1. Smart home automation system\n2. Recipe organization app\n3. Virtual reality fitness game\n4. Local community marketplace'
+        };
+        
+        // Map of available commands and their help descriptions
+        const commands = {
+            'help': 'Display available commands',
+            'ls': 'List directory contents',
+            'cd': 'Change directory',
+            'pwd': 'Print working directory',
+            'echo': 'Display a line of text',
+            'cat': 'Concatenate and display file content',
+            'date': 'Display the current date and time',
+            'clear': 'Clear the terminal screen',
+            'whoami': 'Print current user',
+            'mkdir': 'Create a new directory',
+            'touch': 'Create an empty file',
+            'uname': 'Print system information'
+        };
+        
+        let commandHistory = [];
+        let historyIndex = -1;
+        let currentPath = '/home/user';
+        let currentPrompt = `${username}@${hostname}:${currentDir}$ `;
+        
+        // Initialize terminal with welcome message
+        terminal.innerHTML = `
+Fake Terminal Simulator v1.0
+Type 'help' to see available commands.
+
+${currentPrompt}`;
+
+        input.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                const command = this.value.trim();
+                this.value = '';
+                
+                // Add command to history if it's not empty
+                if (command) {
+                    commandHistory.unshift(command);
+                    historyIndex = -1;
+                }
+                
+                // Display the command
+                terminal.innerHTML += command + '\n';
+                
+                // Process the command and show output
+                if (command) {
+                    const output = processCommand(command);
+                    terminal.innerHTML += output;
+                }
+                
+                // Add new prompt
+                terminal.innerHTML += currentPrompt;
+                
+                // Scroll to bottom
+                terminal.scrollTop = terminal.scrollHeight;
+            } else if (event.key === 'ArrowUp') {
+                // Navigate command history (up)
+                event.preventDefault();
+                if (historyIndex < commandHistory.length - 1) {
+                    historyIndex++;
+                    this.value = commandHistory[historyIndex];
+                }
+            } else if (event.key === 'ArrowDown') {
+                // Navigate command history (down)
+                event.preventDefault();
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    this.value = commandHistory[historyIndex];
+                } else if (historyIndex === 0) {
+                    historyIndex = -1;
+                    this.value = '';
+                }
+            } else if (event.key === 'Tab') {
+                // Simple tab completion for commands
+                event.preventDefault();
+                const partial = this.value.trim();
+                
+                if (partial) {
+                    const matches = Object.keys(commands).filter(cmd => cmd.startsWith(partial));
+                    if (matches.length === 1) {
+                        this.value = matches[0] + ' ';
+                    } else if (matches.length > 1) {
+                        terminal.innerHTML += '\n' + matches.join('  ') + '\n' + currentPrompt + partial;
+                    }
+                }
+            }
+        });
+
+        function processCommand(command) {
+            const parts = command.split(' ');
+            const cmd = parts[0].toLowerCase();
+            const args = parts.slice(1);
+            
+            switch (cmd) {
+                case 'help':
+                    return formatOutput(getHelpOutput());
+                case 'ls':
+                    return formatOutput(listDirectory(args));
+                case 'cd':
+                    return formatOutput(changeDirectory(args[0] || '~'));
+                case 'pwd':
+                    return formatOutput(currentPath);
+                case 'echo':
+                    return formatOutput(args.join(' '));
+                case 'cat':
+                    return formatOutput(catFile(args[0]));
+                case 'date':
+                    return formatOutput(new Date().toString());
+                case 'clear':
+                    terminal.innerHTML = '';
+                    return '';
+                case 'whoami':
+                    return formatOutput(username);
+                case 'mkdir':
+                    return formatOutput(makeDirectory(args[0]));
+                case 'touch':
+                    return formatOutput(touchFile(args[0]));
+                case 'uname':
+                    return formatOutput('FakeOS 5.10.0-generic');
+                case '':
+                    return '';
+                default:
+                    return formatOutput(`${cmd}: command not found`);
+            }
+        }
+        
+        function getHelpOutput() {
+            let output = 'Available commands:\n\n';
+            for (const [cmd, desc] of Object.entries(commands)) {
+                output += `${cmd.padEnd(10)} - ${desc}\n`;
+            }
+            return output;
+        }
+        
+        function listDirectory(args) {
+            let path = currentPath;
+            if (args.length > 0) {
+                path = resolvePath(args[0]);
+            }
+            
+            if (!files[path]) {
+                return `ls: cannot access '${args[0]}': No such file or directory`;
+            }
+            
+            return files[path].join('  ');
+        }
+        
+        function changeDirectory(dir) {
+            const newPath = resolvePath(dir);
+            
+            // Check if the path exists and is a directory
+            if (!files[newPath]) {
+                return `cd: ${dir}: No such file or directory`;
+            }
+            
+            // Update current path and prompt
+            currentPath = newPath;
+            currentDir = newPath === '/home/user' ? '~' : newPath.replace('/home/user', '~');
+            currentPrompt = `${username}@${hostname}:${currentDir}$ `;
+            prompt.textContent = currentPrompt;
+            
+            return '';
+        }
+        
+        function catFile(filename) {
+            if (!filename) {
+                return 'cat: missing file operand';
+            }
+            
+            const filePath = resolvePath(filename);
+            
+            // Check if it's a directory
+            if (files[filePath]) {
+                return `cat: ${filename}: Is a directory`;
+            }
+            
+            // Check if the file exists
+            if (fileContents[filePath]) {
+                return fileContents[filePath];
+            }
+            
+            // Check if the file should exist based on our directory structure
+            const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
+            const basename = filePath.substring(filePath.lastIndexOf('/') + 1);
+            
+            if (files[dirPath] && files[dirPath].includes(basename)) {
+                return `[Content of ${filename}]`;
+            }
+            
+            return `cat: ${filename}: No such file or directory`;
+        }
+        
+        function makeDirectory(dirname) {
+            if (!dirname) {
+                return 'mkdir: missing operand';
+            }
+            
+            if (dirname.includes('/')) {
+                return 'mkdir: cannot create directory with subdirectories: Operation not permitted';
+            }
+            
+            if (!files[currentPath].includes(dirname)) {
+                files[currentPath].push(dirname);
+                files[`${currentPath}/${dirname}`] = [];
+                return '';
+            }
+            
+            return `mkdir: cannot create directory '${dirname}': File exists`;
+        }
+        
+        function touchFile(filename) {
+            if (!filename) {
+                return 'touch: missing file operand';
+            }
+            
+            if (filename.includes('/')) {
+                return 'touch: cannot touch file with path: Operation not permitted';
+            }
+            
+            if (!files[currentPath].includes(filename)) {
+                files[currentPath].push(filename);
+                return '';
+            }
+            
+            // File already exists, just update timestamp (in a real system)
+            return '';
+        }
+        
+        function resolvePath(path) {
+            if (!path) return currentPath;
+            
+            // Handle home directory shorthand
+            if (path === '~') {
+                return '/home/user';
+            } else if (path.startsWith('~/')) {
+                path = '/home/user/' + path.slice(2);
+            }
+            
+            // Handle absolute paths
+            if (path.startsWith('/')) {
+                return path;
+            }
+            
+            // Handle relative paths
+            if (path === '.') {
+                return currentPath;
+            } else if (path === '..') {
+                if (currentPath === '/') {
+                    return '/';
+                }
+                return currentPath.substring(0, currentPath.lastIndexOf('/'));
+            } else if (path.includes('/')) {
+                // Process relative path with subdirectories
+                const parts = path.split('/');
+                let resolvedPath = currentPath;
+                
+                for (const part of parts) {
+                    if (part === '') continue;
+                    if (part === '.') continue;
+                    if (part === '..') {
+                        if (resolvedPath !== '/') {
+                            resolvedPath = resolvedPath.substring(0, resolvedPath.lastIndexOf('/'));
+                        }
+                    } else {
+                        resolvedPath += '/' + part;
+                    }
+                }
+                
+                return resolvedPath;
+            } else {
+                // Simple relative path
+                return currentPath + '/' + path;
+            }
+        }
+        
+        function formatOutput(text) {
+            return `<div class="output">${text}</div>`;
+        }
+        
+        // Focus input when clicking anywhere in the terminal
+        document.addEventListener('click', function() {
+            input.focus();
+        });
+        
+        // Keep input focused
+        input.focus();
+    </script>
+</body>
+</html>
+<!-- Common commands like ls, cd, pwd, echo, cat, date, clear, whoami, mkdir, touch, and uname
+help - See all available commands
+ls - List files in current directory
+cd Documents - Change to Documents directory
+cat notes.txt - View file contents
+mkdir NewFolder - Create a new directory -->
+<!-- touch newfile.txt - Create a new file -->

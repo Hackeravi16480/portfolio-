@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Drawing App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        #canvas {
+            border: 2px solid #333;
+            background-color: white;
+            cursor: crosshair;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+            touch-action: none;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        #clearBtn {
+            background-color: #f44336;
+        }
+        
+        #clearBtn:hover {
+            background-color: #d32f2f;
+        }
+        
+        #saveBtn {
+            background-color: #2196F3;
+        }
+        
+        #saveBtn:hover {
+            background-color: #0b7dda;
+        }
+        
+        #undoBtn {
+            background-color: #FF9800;
+        }
+        
+        #undoBtn:hover {
+            background-color: #e68a00;
+        }
+        
+        .tools {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .tool {
+            padding: 8px 16px;
+            background-color: #ddd;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .tool.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .color-picker {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 10px;
+            justify-content: center;
+        }
+        
+        .color {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #ccc;
+            transition: transform 0.2s;
+        }
+        
+        .color:hover {
+            transform: scale(1.1);
+        }
+        
+        .color.selected {
+            border: 2px solid black;
+            transform: scale(1.1);
+        }
+        
+        .brush-size {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .brush-size label {
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Simple Drawing App</h1>
+        
+        <div class="tools">
+            <button class="tool active" id="brushTool">Brush</button>
+            <button class="tool" id="eraserTool">Eraser</button>
+        </div>
+        
+        <div class="color-picker">
+            <div class="color selected" style="background-color: black;" data-color="black"></div>
+            <div class="color" style="background-color: red;" data-color="red"></div>
+            <div class="color" style="background-color: green;" data-color="green"></div>
+            <div class="color" style="background-color: blue;" data-color="blue"></div>
+            <div class="color" style="background-color: yellow;" data-color="yellow"></div>
+            <div class="color" style="background-color: orange;" data-color="orange"></div>
+            <div class="color" style="background-color: purple;" data-color="purple"></div>
+            <div class="color" style="background-color: pink;" data-color="pink"></div>
+            <div class="color" style="background-color: brown;" data-color="brown"></div>
+            <div class="color" style="background-color: white;" data-color="white"></div>
+        </div>
+        
+        <div class="brush-size">
+            <label for="brushSize">Brush Size:</label>
+            <input type="range" id="brushSize" min="1" max="30" value="5">
+            <span id="sizeDisplay">5</span>
+        </div>
+        
+        <canvas id="canvas" width="800" height="500"></canvas>
+        
+        <div class="controls">
+            <button id="undoBtn">Undo</button>
+            <button id="clearBtn">Clear Canvas</button>
+            <button id="saveBtn">Save Artwork</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const clearBtn = document.getElementById('clearBtn');
+            const saveBtn = document.getElementById('saveBtn');
+            const undoBtn = document.getElementById('undoBtn');
+            const brushTool = document.getElementById('brushTool');
+            const eraserTool = document.getElementById('eraserTool');
+            const brushSizeInput = document.getElementById('brushSize');
+            const sizeDisplay = document.getElementById('sizeDisplay');
+            const colorElements = document.querySelectorAll('.color');
+            
+            let isDrawing = false;
+            let currentColor = 'black';
+            let previousColor = 'black';
+            let currentSize = 5;
+            let isEraser = false;
+            
+            // Store canvas states for undo functionality
+            const history = [];
+            let historyIndex = -1;
+            
+            // Set initial canvas background to white
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Save initial state
+            saveState();
+            
+            // Tool selection
+            brushTool.addEventListener('click', function() {
+                isEraser = false;
+                brushTool.classList.add('active');
+                eraserTool.classList.remove('active');
+                currentColor = previousColor;
+                canvas.style.cursor = 'crosshair';
+            });
+            
+            eraserTool.addEventListener('click', function() {
+                isEraser = true;
+                eraserTool.classList.add('active');
+                brushTool.classList.remove('active');
+                previousColor = currentColor;
+                currentColor = 'white';
+                canvas.style.cursor = 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'24\' height=\'24\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'black\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpath d=\'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6\'%3E%3C/path%3E%3Cpath d=\'M15 3h6v6\'%3E%3C/path%3E%3Cpath d=\'M10 14L21 3\'%3E%3C/path%3E%3C/svg%3E") 0 24, auto';
+            });
+            
+            // Update brush size display
+            brushSizeInput.addEventListener('input', function() {
+                currentSize = this.value;
+                sizeDisplay.textContent = currentSize;
+            });
+            
+            // Color selection
+            colorElements.forEach(color => {
+                color.addEventListener('click', function() {
+                    if (!isEraser) {
+                        // Remove selected class from all colors
+                        colorElements.forEach(c => c.classList.remove('selected'));
+                        // Add selected class to clicked color
+                        this.classList.add('selected');
+                        currentColor = this.getAttribute('data-color');
+                        previousColor = currentColor;
+                    }
+                });
+            });
+            
+            // Save the current state of the canvas
+            function saveState() {
+                // Limit the history size to avoid memory issues
+                if (historyIndex < history.length - 1) {
+                    history.splice(historyIndex + 1);
+                }
+                
+                if (history.length >= 10) {
+                    history.shift();
+                } else {
+                    historyIndex++;
+                }
+                
+                history.push(canvas.toDataURL());
+            }
+            
+            // Undo the last action
+            function undo() {
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    const img = new Image();
+                    img.src = history[historyIndex];
+                    img.onload = function() {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0);
+                    };
+                }
+            }
+            
+            // Drawing functions
+            function startDrawing(e) {
+                isDrawing = true;
+                draw(e); // Draw a dot where user first clicked
+                saveState();
+            }
+            
+            function stopDrawing() {
+                if (isDrawing) {
+                    isDrawing = false;
+                    // Reset path
+                    ctx.beginPath();
+                    saveState();
+                }
+            }
+            
+            function draw(e) {
+                if (!isDrawing) return;
+                
+                // Get coordinates depending on event type
+                let x, y;
+                
+                if (e.type === 'mousemove') {
+                    x = e.offsetX;
+                    y = e.offsetY;
+                } else if (e.type === 'touchmove') {
+                    const rect = canvas.getBoundingClientRect();
+                    x = e.touches[0].clientX - rect.left;
+                    y = e.touches[0].clientY - rect.top;
+                    e.preventDefault(); // Prevent scrolling
+                }
+                
+                ctx.lineWidth = currentSize;
+                ctx.lineCap = 'round';
+                ctx.strokeStyle = currentColor;
+                
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+            }
+            
+            // Event listeners for mouse
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseout', stopDrawing);
+            
+            // Event listeners for touch
+            canvas.addEventListener('touchstart', function(e) {
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches[0];
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                isDrawing = true;
+                e.preventDefault();
+                saveState();
+            });
+            
+            canvas.addEventListener('touchend', stopDrawing);
+            canvas.addEventListener('touchcancel', stopDrawing);
+            canvas.addEventListener('touchmove', draw);
+            
+            // Clear canvas
+            clearBtn.addEventListener('click', function() {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                saveState();
+            });
+            
+            // Undo button
+            undoBtn.addEventListener('click', undo);
+            
+            // Save artwork
+            saveBtn.addEventListener('click', function() {
+                const image = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.href = image;
+                link.download = 'drawing.png';
+                link.click();
+            });
+            
+            // Resize canvas to fit container on window resize
+            function resizeCanvas() {
+                const container = document.querySelector('.container');
+                const maxWidth = Math.min(container.clientWidth - 20, 800);
+                
+                // Save current drawing
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                
+                // Resize canvas
+                canvas.width = maxWidth;
+                
+                // Restore drawing
+                ctx.putImageData(imageData, 0, 0);
+                
+                // If it's a new canvas, fill with white
+                if (!imageData.data.some(pixel => pixel !== 0)) {
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+            
+            // Initial resize
+            resizeCanvas();
+            
+            // Listen for window resize
+            window.addEventListener('resize', resizeCanvas);
+        });
+    </script>
+</body>
+</html>

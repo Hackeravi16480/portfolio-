@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expense Splitter</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      background-color: #f5f5f5;
+      color: #333;
+      line-height: 1.6;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #4a5568;
+    }
+    
+    .input-section {
+      margin-bottom: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: #4a5568;
+    }
+    
+    input[type="text"], 
+    input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    
+    button {
+      background-color: #4299e1;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+    
+    button:hover {
+      background-color: #3182ce;
+    }
+    
+    .friends-list {
+      margin: 20px 0;
+    }
+    
+    .friend-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .remove-btn {
+      background-color: #fc8181;
+      padding: 5px 10px;
+      margin-left: 10px;
+    }
+    
+    .remove-btn:hover {
+      background-color: #e53e3e;
+    }
+    
+    .expenses-list {
+      margin: 20px 0;
+    }
+    
+    .expense-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .summary {
+      margin-top: 30px;
+      padding: 20px;
+      background-color: #ebf8ff;
+      border-radius: 5px;
+    }
+    
+    .summary h2 {
+      margin-bottom: 15px;
+      color: #4a5568;
+    }
+    
+    .per-person {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #2b6cb0;
+    }
+    
+    .action-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+    
+    .action-buttons button {
+      flex: 1;
+      margin: 0 5px;
+    }
+    
+    .reset-btn {
+      background-color: #a0aec0;
+    }
+    
+    .reset-btn:hover {
+      background-color: #718096;
+    }
+    
+    .calculate-btn {
+      background-color: #48bb78;
+    }
+    
+    .calculate-btn:hover {
+      background-color: #38a169;
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    @media screen and (max-width: 600px) {
+      .container {
+        padding: 15px;
+      }
+      
+      input[type="text"], 
+      input[type="number"] {
+        font-size: 14px;
+      }
+      
+      .action-buttons {
+        flex-direction: column;
+      }
+      
+      .action-buttons button {
+        margin: 5px 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Expense Splitter</h1>
+    
+    <div class="input-section">
+      <div class="form-group">
+        <label for="friend-name">Friend's Name:</label>
+        <input type="text" id="friend-name" placeholder="Enter friend's name">
+      </div>
+      <button id="add-friend">Add Friend</button>
+    </div>
+    
+    <div class="friends-list" id="friends-list">
+      <h2>Friends</h2>
+      <div id="friends-container"></div>
+    </div>
+    
+    <div class="input-section">
+      <div class="form-group">
+        <label for="expense-description">Expense Description:</label>
+        <input type="text" id="expense-description" placeholder="Enter expense description">
+      </div>
+      <div class="form-group">
+        <label for="expense-amount">Amount ($):</label>
+        <input type="number" id="expense-amount" placeholder="Enter amount" min="0" step="0.01">
+      </div>
+      <button id="add-expense">Add Expense</button>
+    </div>
+    
+    <div class="expenses-list">
+      <h2>Expenses</h2>
+      <div id="expenses-container"></div>
+      <div class="form-group" style="margin-top: 15px;">
+        <label for="total-amount">Total Amount:</label>
+        <input type="text" id="total-amount" value="$0.00" readonly>
+      </div>
+    </div>
+    
+    <div class="summary hidden" id="summary">
+      <h2>Summary</h2>
+      <p class="per-person" id="per-person">Each person pays: $0.00</p>
+      <div id="breakdown"></div>
+    </div>
+    
+    <div class="action-buttons">
+      <button class="reset-btn" id="reset-btn">Reset All</button>
+      <button class="calculate-btn" id="calculate-btn">Calculate Split</button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // App state
+      const state = {
+        friends: [],
+        expenses: [],
+        totalAmount: 0
+      };
+      
+      // DOM Elements
+      const friendNameInput = document.getElementById('friend-name');
+      const addFriendButton = document.getElementById('add-friend');
+      const friendsContainer = document.getElementById('friends-container');
+      
+      const expenseDescInput = document.getElementById('expense-description');
+      const expenseAmountInput = document.getElementById('expense-amount');
+      const addExpenseButton = document.getElementById('add-expense');
+      const expensesContainer = document.getElementById('expenses-container');
+      const totalAmountDisplay = document.getElementById('total-amount');
+      
+      const calculateButton = document.getElementById('calculate-btn');
+      const resetButton = document.getElementById('reset-btn');
+      const summarySection = document.getElementById('summary');
+      const perPersonDisplay = document.getElementById('per-person');
+      const breakdownContainer = document.getElementById('breakdown');
+      
+      // Event Listeners
+      addFriendButton.addEventListener('click', addFriend);
+      addExpenseButton.addEventListener('click', addExpense);
+      calculateButton.addEventListener('click', calculateSplit);
+      resetButton.addEventListener('click', resetAll);
+      
+      // Add friend function
+      function addFriend() {
+        const name = friendNameInput.value.trim();
+        if (name === '') {
+          alert('Please enter a name');
+          return;
+        }
+        
+        if (state.friends.includes(name)) {
+          alert('This friend is already added');
+          return;
+        }
+        
+        state.friends.push(name);
+        renderFriends();
+        friendNameInput.value = '';
+      }
+      
+      // Remove friend function
+      function removeFriend(index) {
+        state.friends.splice(index, 1);
+        renderFriends();
+      }
+      
+      // Render friends list
+      function renderFriends() {
+        friendsContainer.innerHTML = '';
+        
+        if (state.friends.length === 0) {
+          friendsContainer.innerHTML = '<p>No friends added yet</p>';
+          return;
+        }
+        
+        state.friends.forEach((friend, index) => {
+          const friendItem = document.createElement('div');
+          friendItem.className = 'friend-item';
+          
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = friend;
+          
+          const removeButton = document.createElement('button');
+          removeButton.className = 'remove-btn';
+          removeButton.textContent = 'Remove';
+          removeButton.addEventListener('click', () => removeFriend(index));
+          
+          friendItem.appendChild(nameSpan);
+          friendItem.appendChild(removeButton);
+          friendsContainer.appendChild(friendItem);
+        });
+      }
+      
+      // Add expense function
+      function addExpense() {
+        const description = expenseDescInput.value.trim();
+        const amount = parseFloat(expenseAmountInput.value);
+        
+        if (description === '' || isNaN(amount) || amount <= 0) {
+          alert('Please enter a valid description and amount');
+          return;
+        }
+        
+        state.expenses.push({ description, amount });
+        state.totalAmount += amount;
+        
+        renderExpenses();
+        expenseDescInput.value = '';
+        expenseAmountInput.value = '';
+      }
+      
+      // Remove expense function
+      function removeExpense(index) {
+        const expense = state.expenses[index];
+        state.totalAmount -= expense.amount;
+        state.expenses.splice(index, 1);
+        renderExpenses();
+      }
+      
+      // Render expenses list
+      function renderExpenses() {
+        expensesContainer.innerHTML = '';
+        
+        if (state.expenses.length === 0) {
+          expensesContainer.innerHTML = '<p>No expenses added yet</p>';
+          totalAmountDisplay.value = '$0.00';
+          return;
+        }
+        
+        state.expenses.forEach((expense, index) => {
+          const expenseItem = document.createElement('div');
+          expenseItem.className = 'expense-item';
+          
+          const descriptionSpan = document.createElement('span');
+          descriptionSpan.textContent = expense.description;
+          
+          const amountSpan = document.createElement('span');
+          amountSpan.textContent = `$${expense.amount.toFixed(2)}`;
+          
+          const removeButton = document.createElement('button');
+          removeButton.className = 'remove-btn';
+          removeButton.textContent = 'Remove';
+          removeButton.addEventListener('click', () => removeExpense(index));
+          
+          expenseItem.appendChild(descriptionSpan);
+          expenseItem.appendChild(amountSpan);
+          expenseItem.appendChild(removeButton);
+          expensesContainer.appendChild(expenseItem);
+        });
+        
+        totalAmountDisplay.value = `$${state.totalAmount.toFixed(2)}`;
+      }
+      
+      // Calculate split function
+      function calculateSplit() {
+        if (state.friends.length === 0) {
+          alert('Please add at least one friend');
+          return;
+        }
+        
+        if (state.expenses.length === 0) {
+          alert('Please add at least one expense');
+          return;
+        }
+        
+        const perPersonAmount = state.totalAmount / state.friends.length;
+        
+        summarySection.classList.remove('hidden');
+        perPersonDisplay.textContent = `Each person pays: $${perPersonAmount.toFixed(2)}`;
+        
+        breakdownContainer.innerHTML = '';
+        state.friends.forEach(friend => {
+          const p = document.createElement('p');
+          p.textContent = `${friend}: $${perPersonAmount.toFixed(2)}`;
+          breakdownContainer.appendChild(p);
+        });
+      }
+      
+      // Reset all function
+      function resetAll() {
+        state.friends = [];
+        state.expenses = [];
+        state.totalAmount = 0;
+        
+        renderFriends();
+        renderExpenses();
+        
+        summarySection.classList.add('hidden');
+        friendNameInput.value = '';
+        expenseDescInput.value = '';
+        expenseAmountInput.value = '';
+      }
+      
+      // Initialize
+      renderFriends();
+      renderExpenses();
+    });
+  </script>
+</body>
+</html>
