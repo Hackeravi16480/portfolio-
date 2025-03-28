@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tic-Tac-Toe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+        #game-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 20px;
+            text-align: center;
+        }
+        #board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 10px;
+            margin: 20px 0;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 60px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .cell:hover {
+            background-color: #d0d0d0;
+        }
+        #status {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        #mode-selector, #score-board {
+            margin-bottom: 20px;
+        }
+        #score-board {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+        }
+        .score-box {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            min-width: 120px;
+        }
+        button {
+            margin: 0 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .active-mode {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>Tic-Tac-Toe</h1>
+        
+        <div id="mode-selector">
+            <button id="pvp-btn" onclick="setGameMode('pvp')">Player vs Player</button>
+            <button id="ai-btn" onclick="setGameMode('ai')">Player vs AI</button>
+        </div>
+
+        <div id="score-board">
+            <div class="score-box">
+                <h3>X Score</h3>
+                <div id="x-score">0</div>
+            </div>
+            <div class="score-box">
+                <h3>Draws</h3>
+                <div id="draws-score">0</div>
+            </div>
+            <div class="score-box">
+                <h3>O Score</h3>
+                <div id="o-score">0</div>
+            </div>
+        </div>
+
+        <div id="status">Select Game Mode</div>
+        
+        <div id="board">
+            <div class="cell" data-index="0" onclick="cellClick(0)"></div>
+            <div class="cell" data-index="1" onclick="cellClick(1)"></div>
+            <div class="cell" data-index="2" onclick="cellClick(2)"></div>
+            <div class="cell" data-index="3" onclick="cellClick(3)"></div>
+            <div class="cell" data-index="4" onclick="cellClick(4)"></div>
+            <div class="cell" data-index="5" onclick="cellClick(5)"></div>
+            <div class="cell" data-index="6" onclick="cellClick(6)"></div>
+            <div class="cell" data-index="7" onclick="cellClick(7)"></div>
+            <div class="cell" data-index="8" onclick="cellClick(8)"></div>
+        </div>
+
+        <button onclick="resetGame()">Reset Game</button>
+        <button onclick="resetScores()">Reset Scores</button>
+    </div>
+
+    <script>
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let currentPlayer = 'X';
+        let gameMode = null;
+        let gameActive = false;
+        let scores = {
+            'X': 0,
+            'O': 0,
+            'draws': 0
+        };
+
+        function setGameMode(mode) {
+            // Reset scores when changing mode
+            resetScores();
+
+            // Update mode buttons
+            document.getElementById('pvp-btn').classList.remove('active-mode');
+            document.getElementById('ai-btn').classList.remove('active-mode');
+            document.getElementById(`${mode === 'pvp' ? 'pvp-btn' : 'ai-btn'}`).classList.add('active-mode');
+
+            gameMode = mode;
+            resetGame();
+            document.getElementById('status').textContent = `${mode === 'pvp' ? 'Player vs Player' : 'Player vs AI'} Mode - X's Turn`;
+        }
+
+        function cellClick(index) {
+            if (!gameMode || !gameActive || board[index] !== '') return;
+
+            board[index] = currentPlayer;
+            document.querySelector(`.cell[data-index="${index}"]`).textContent = currentPlayer;
+
+            if (checkWin(currentPlayer)) {
+                scores[currentPlayer]++;
+                updateScoreDisplay();
+                document.getElementById('status').textContent = `${currentPlayer} Wins!`;
+                gameActive = false;
+                setTimeout(resetGame, 2000);
+                return;
+            }
+
+            if (checkDraw()) {
+                scores['draws']++;
+                updateScoreDisplay();
+                document.getElementById('status').textContent = "It's a Draw!";
+                gameActive = false;
+                setTimeout(resetGame, 2000);
+                return;
+            }
+
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            document.getElementById('status').textContent = `${currentPlayer}'s Turn`;
+
+            if (gameMode === 'ai' && currentPlayer === 'O') {
+                setTimeout(aiMove, 500);
+            }
+        }
+
+        function aiMove() {
+            // Improved AI strategy: Try to win, block opponent, or choose randomly
+            const winningMove = findWinningMove('O');
+            const blockingMove = findWinningMove('X');
+            
+            let moveIndex;
+            if (winningMove !== -1) {
+                moveIndex = winningMove;
+            } else if (blockingMove !== -1) {
+                moveIndex = blockingMove;
+            } else {
+                const emptyCells = board.reduce((acc, val, idx) => 
+                    val === '' ? [...acc, idx] : acc, []);
+                moveIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            }
+            
+            cellClick(moveIndex);
+        }
+
+        function findWinningMove(player) {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],  // Rows
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],  // Columns
+                [0, 4, 8], [2, 4, 6]  // Diagonals
+            ];
+
+            for (let pattern of winPatterns) {
+                const emptyIndex = pattern.find(index => board[index] === '');
+                if (emptyIndex !== undefined) {
+                    const otherIndices = pattern.filter(index => index !== emptyIndex);
+                    if (otherIndices.every(index => board[index] === player)) {
+                        return emptyIndex;
+                    }
+                }
+            }
+            return -1;
+        }
+
+        function checkWin(player) {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],  // Rows
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],  // Columns
+                [0, 4, 8], [2, 4, 6]  // Diagonals
+            ];
+
+            return winPatterns.some(pattern => 
+                pattern.every(index => board[index] === player)
+            );
+        }
+
+        function checkDraw() {
+            return board.every(cell => cell !== '');
+        }
+
+        function resetGame() {
+            board = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            gameActive = true;
+
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.textContent = '';
+            });
+
+            document.getElementById('status').textContent = `${gameMode === 'pvp' ? 'Player vs Player' : 'Player vs AI'} Mode - X's Turn`;
+
+            if (gameMode === 'ai' && currentPlayer === 'O') {
+                aiMove();
+            }
+        }
+
+        function resetScores() {
+            scores = {
+                'X': 0,
+                'O': 0,
+                'draws': 0
+            };
+            updateScoreDisplay();
+        }
+
+        function updateScoreDisplay() {
+            document.getElementById('x-score').textContent = scores['X'];
+            document.getElementById('o-score').textContent = scores['O'];
+            document.getElementById('draws-score').textContent = scores['draws'];
+        }
+    </script>
+</body>
+</html>
