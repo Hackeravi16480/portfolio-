@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .calculator {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 500px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 28px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .results {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 25px;
+            display: none;
+        }
+        .results h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .result-value {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        .slider-container {
+            position: relative;
+            margin-top: 8px;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin-bottom: 12px;
+        }
+        .range-values {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #666;
+        }
+        .error {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <h1>Loan Calculator</h1>
+        <div class="input-group">
+            <label for="loan-amount">Loan Amount ($)</label>
+            <input type="number" id="loan-amount" placeholder="Enter loan amount" min="1" value="10000">
+            <div class="slider-container">
+                <input type="range" id="loan-amount-slider" min="1000" max="100000" step="1000" value="10000">
+                <div class="range-values">
+                    <span>$1,000</span>
+                    <span>$100,000</span>
+                </div>
+            </div>
+            <div id="loan-amount-error" class="error">Please enter a valid loan amount</div>
+        </div>
+
+        <div class="input-group">
+            <label for="interest-rate">Annual Interest Rate (%)</label>
+            <input type="number" id="interest-rate" placeholder="Enter interest rate" min="0.1" max="30" step="0.1" value="5">
+            <div class="slider-container">
+                <input type="range" id="interest-rate-slider" min="0.1" max="30" step="0.1" value="5">
+                <div class="range-values">
+                    <span>0.1%</span>
+                    <span>30%</span>
+                </div>
+            </div>
+            <div id="interest-rate-error" class="error">Please enter a valid interest rate</div>
+        </div>
+
+        <div class="input-group">
+            <label for="loan-term">Loan Term (years)</label>
+            <input type="number" id="loan-term" placeholder="Enter loan term" min="1" max="30" value="5">
+            <div class="slider-container">
+                <input type="range" id="loan-term-slider" min="1" max="30" step="1" value="5">
+                <div class="range-values">
+                    <span>1 year</span>
+                    <span>30 years</span>
+                </div>
+            </div>
+            <div id="loan-term-error" class="error">Please enter a valid loan term</div>
+        </div>
+
+        <button id="calculate-btn">Calculate</button>
+
+        <div class="results" id="results">
+            <h2>Payment Summary</h2>
+            <div class="result-item">
+                <span>Monthly Payment:</span>
+                <span class="result-value" id="monthly-payment">$0</span>
+            </div>
+            <div class="result-item">
+                <span>Total Payment:</span>
+                <span class="result-value" id="total-payment">$0</span>
+            </div>
+            <div class="result-item">
+                <span>Total Interest:</span>
+                <span class="result-value" id="total-interest">$0</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get DOM elements
+        const loanAmountInput = document.getElementById('loan-amount');
+        const interestRateInput = document.getElementById('interest-rate');
+        const loanTermInput = document.getElementById('loan-term');
+        const loanAmountSlider = document.getElementById('loan-amount-slider');
+        const interestRateSlider = document.getElementById('interest-rate-slider');
+        const loanTermSlider = document.getElementById('loan-term-slider');
+        const calculateBtn = document.getElementById('calculate-btn');
+        const resultsDiv = document.getElementById('results');
+        const monthlyPaymentSpan = document.getElementById('monthly-payment');
+        const totalPaymentSpan = document.getElementById('total-payment');
+        const totalInterestSpan = document.getElementById('total-interest');
+        const loanAmountError = document.getElementById('loan-amount-error');
+        const interestRateError = document.getElementById('interest-rate-error');
+        const loanTermError = document.getElementById('loan-term-error');
+
+        // Sync sliders with input fields
+        loanAmountInput.addEventListener('input', () => {
+            loanAmountSlider.value = loanAmountInput.value;
+        });
+        
+        loanAmountSlider.addEventListener('input', () => {
+            loanAmountInput.value = loanAmountSlider.value;
+        });
+        
+        interestRateInput.addEventListener('input', () => {
+            interestRateSlider.value = interestRateInput.value;
+        });
+        
+        interestRateSlider.addEventListener('input', () => {
+            interestRateInput.value = interestRateSlider.value;
+        });
+        
+        loanTermInput.addEventListener('input', () => {
+            loanTermSlider.value = loanTermInput.value;
+        });
+        
+        loanTermSlider.addEventListener('input', () => {
+            loanTermInput.value = loanTermSlider.value;
+        });
+
+        // Calculate loan when button is clicked
+        calculateBtn.addEventListener('click', () => {
+            // Reset error messages
+            loanAmountError.style.display = 'none';
+            interestRateError.style.display = 'none';
+            loanTermError.style.display = 'none';
+            
+            // Validate inputs
+            let isValid = true;
+            
+            const loanAmount = parseFloat(loanAmountInput.value);
+            if (isNaN(loanAmount) || loanAmount <= 0) {
+                loanAmountError.style.display = 'block';
+                isValid = false;
+            }
+            
+            const interestRate = parseFloat(interestRateInput.value);
+            if (isNaN(interestRate) || interestRate <= 0 || interestRate > 100) {
+                interestRateError.style.display = 'block';
+                isValid = false;
+            }
+            
+            const loanTerm = parseInt(loanTermInput.value);
+            if (isNaN(loanTerm) || loanTerm <= 0) {
+                loanTermError.style.display = 'block';
+                isValid = false;
+            }
+            
+            if (!isValid) return;
+            
+            // Calculate loan details
+            const monthlyInterestRate = interestRate / 100 / 12;
+            const totalPayments = loanTerm * 12;
+            
+            // Monthly payment formula: P = (r * PV) / (1 - (1 + r)^(-n))
+            // Where:
+            // P = Monthly payment
+            // r = Monthly interest rate (annual rate / 12)
+            // PV = Loan amount
+            // n = Total number of payments (years * 12)
+            
+            let monthlyPayment = 0;
+            if (interestRate === 0) {
+                // If interest rate is 0, simple division
+                monthlyPayment = loanAmount / totalPayments;
+            } else {
+                monthlyPayment = (monthlyInterestRate * loanAmount) / 
+                                (1 - Math.pow(1 + monthlyInterestRate, -totalPayments));
+            }
+            
+            const totalPayment = monthlyPayment * totalPayments;
+            const totalInterest = totalPayment - loanAmount;
+            
+            // Display results
+            monthlyPaymentSpan.textContent = '$' + monthlyPayment.toFixed(2);
+            totalPaymentSpan.textContent = '$' + totalPayment.toFixed(2);
+            totalInterestSpan.textContent = '$' + totalInterest.toFixed(2);
+            
+            resultsDiv.style.display = 'block';
+        });
+    </script>
+</body>
+</html>

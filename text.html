@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Case Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            font-size: 16px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 10px 15px;
+            background-color: #4a6cf7;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            flex-grow: 1;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            background-color: #3a5ce5;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            flex-grow: 1;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4a6cf7;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: #777;
+        }
+
+        @media (max-width: 500px) {
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Text Case Converter</h1>
+        
+        <div class="input-group">
+            <label for="text-input">Enter or paste your text:</label>
+            <textarea id="text-input" placeholder="Type or paste your text here..."></textarea>
+        </div>
+        
+        <div class="button-group">
+            <button id="uppercase-btn">UPPERCASE</button>
+            <button id="lowercase-btn">lowercase</button>
+            <button id="titlecase-btn">Title Case</button>
+            <button id="sentencecase-btn">Sentence case</button>
+            <button id="clear-btn">Clear</button>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="char-count">0</div>
+                <div class="stat-label">Characters</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="word-count">0</div>
+                <div class="stat-label">Words</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="line-count">0</div>
+                <div class="stat-label">Lines</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const textInput = document.getElementById('text-input');
+            const uppercaseBtn = document.getElementById('uppercase-btn');
+            const lowercaseBtn = document.getElementById('lowercase-btn');
+            const titlecaseBtn = document.getElementById('titlecase-btn');
+            const sentencecaseBtn = document.getElementById('sentencecase-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const charCount = document.getElementById('char-count');
+            const wordCount = document.getElementById('word-count');
+            const lineCount = document.getElementById('line-count');
+            
+            // Update stats on input
+            textInput.addEventListener('input', updateStats);
+            
+            // Button event listeners
+            uppercaseBtn.addEventListener('click', function() {
+                textInput.value = textInput.value.toUpperCase();
+                updateStats();
+            });
+            
+            lowercaseBtn.addEventListener('click', function() {
+                textInput.value = textInput.value.toLowerCase();
+                updateStats();
+            });
+            
+            titlecaseBtn.addEventListener('click', function() {
+                textInput.value = toTitleCase(textInput.value);
+                updateStats();
+            });
+            
+            sentencecaseBtn.addEventListener('click', function() {
+                textInput.value = toSentenceCase(textInput.value);
+                updateStats();
+            });
+            
+            clearBtn.addEventListener('click', function() {
+                textInput.value = '';
+                updateStats();
+            });
+            
+            // Convert text to title case
+            function toTitleCase(text) {
+                return text.replace(/\w\S*/g, function(word) {
+                    return word.charAt(0).toUpperCase() + word.substr(1).toLowerCase();
+                });
+            }
+            
+            // Convert text to sentence case
+            function toSentenceCase(text) {
+                // Split the text into sentences
+                const sentences = text.split(/([.!?]\s+)/);
+                let result = '';
+                
+                for (let i = 0; i < sentences.length; i++) {
+                    if (i % 2 === 0) {
+                        // This is a sentence, capitalize the first letter
+                        if (sentences[i].length > 0) {
+                            result += sentences[i].charAt(0).toUpperCase() + sentences[i].slice(1).toLowerCase();
+                        }
+                    } else {
+                        // This is a punctuation and spacing, keep as is
+                        result += sentences[i];
+                    }
+                }
+                
+                return result;
+            }
+            
+            // Update statistics
+            function updateStats() {
+                const text = textInput.value;
+                
+                // Update character count
+                charCount.textContent = text.length;
+                
+                // Update word count
+                const words = text.trim() ? text.trim().split(/\s+/) : [];
+                wordCount.textContent = words.length;
+                
+                // Update line count
+                const lines = text.split(/\r\n|\r|\n/);
+                lineCount.textContent = text ? lines.length : 0;
+            }
+            
+            // Initialize stats
+            updateStats();
+        });
+    </script>
+</body>
+</html>
