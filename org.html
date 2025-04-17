@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Origami Folding Guide</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            background-color: #e6f7ff;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #0066cc;
+            margin: 0;
+        }
+        
+        .nav-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .nav-button {
+            padding: 10px 15px;
+            margin: 5px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .nav-button:hover {
+            background-color: #004d99;
+        }
+        
+        .nav-button.active {
+            background-color: #004080;
+            font-weight: bold;
+        }
+        
+        .origami-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+        }
+        
+        .origami-card {
+            width: 300px;
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+        
+        .origami-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .origami-image {
+            width: 100%;
+            height: 200px;
+            background-color: #e6f7ff;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        
+        .difficulty {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .beginner {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .intermediate {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .advanced {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .tutorial-container {
+            display: none;
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        
+        .tutorial-container.active {
+            display: block;
+        }
+        
+        .tutorial-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .back-button {
+            padding: 8px 15px;
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .step-navigation {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+        }
+        
+        .steps-container {
+            margin-top: 30px;
+        }
+        
+        .step {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        
+        .step.active {
+            display: block;
+        }
+        
+        .step-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .step-image {
+            flex: 1;
+            min-width: 300px;
+            height: 300px;
+            background-color: #e6f7ff;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .step-instructions {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background-color: #0066cc;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .nav-btn {
+            padding: 10px 20px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .nav-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .origami-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .origami-card {
+                width: 90%;
+            }
+            
+            .step-content {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Origami Folding Guide</h1>
+        <p>Learn the art of paper folding with our step-by-step instructions</p>
+    </header>
+    
+    <div class="nav-container">
+        <button class="nav-button active" data-filter="all">All</button>
+        <button class="nav-button" data-filter="beginner">Beginner</button>
+        <button class="nav-button" data-filter="intermediate">Intermediate</button>
+        <button class="nav-button" data-filter="advanced">Advanced</button>
+    </div>
+    
+    <div class="origami-container" id="origamiList">
+        <!-- Origami cards will be dynamically generated here -->
+    </div>
+    
+    <div class="tutorial-container" id="tutorialContainer">
+        <div class="tutorial-header">
+            <button class="back-button" id="backButton">← Back to List</button>
+            <h2 id="tutorialTitle">Origami Tutorial</h2>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress" id="progressBar"></div>
+        </div>
+        
+        <div class="steps-container" id="stepsContainer">
+            <!-- Steps will be dynamically generated here -->
+        </div>
+        
+        <div class="step-navigation">
+            <button class="nav-btn" id="prevButton" disabled>Previous</button>
+            <span id="stepCounter">Step 1 of 6</span>
+            <button class="nav-btn" id="nextButton">Next</button>
+        </div>
+    </div>
+    
+    <script>
+        // Origami data
+        const origamiData = [
+            {
+                id: 1,
+                name: "Traditional Crane",
+                difficulty: "intermediate",
+                description: "The crane is one of the most iconic origami models. It symbolizes peace and good fortune.",
+                imageIcon: "🦢",
+                steps: [
+                    {
+                        instruction: "Start with a square piece of paper, colored side down. Fold the paper in half diagonally to make a triangle.",
+                        imageIcon: "📄"
+                    },
+                    {
+                        instruction: "Fold the triangle in half to make a smaller triangle, then unfold.",
+                        imageIcon: "📑"
+                    },
+                    {
+                        instruction: "Fold the sides to the center crease, creating a kite shape.",
+                        imageIcon: "🪁"
+                    },
+                    {
+                        instruction: "Fold the top triangular flaps into the center and unfold. Then fold the top point down and unfold.",
+                        imageIcon: "📝"
+                    },
+                    {
+                        instruction: "Pull the sides out while pushing the top down, flat folding into a square shape.",
+                        imageIcon: "📏"
+                    },
+                    {
+                        instruction: "Fold the sides of the model inward. Then fold the legs up. Finally, fold down the wings and head to complete the crane.",
+                        imageIcon: "🦢"
+                    }
+                ]
+            },
+            {
+                id: 2,
+                name: "Simple Heart",
+                difficulty: "beginner",
+                description: "A beautiful heart design that's easy to make and perfect for Valentine's Day or any special occasion.",
+                imageIcon: "❤️",
+                steps: [
+                    {
+                        instruction: "Start with a square piece of paper. Fold it in half diagonally to make a triangle.",
+                        imageIcon: "📄"
+                    },
+                    {
+                        instruction: "Fold the sides of the triangle to align with the center crease.",
+                        imageIcon: "📑"
+                    },
+                    {
+                        instruction: "Fold the two top points down slightly.",
+                        imageIcon: "📝"
+                    },
+                    {
+                        instruction: "Fold the bottom point up a little bit to round the bottom of the heart.",
+                        imageIcon: "📏"
+                    }
+                ]
+            },
+            {
+                id: 3,
+                name: "Jumping Frog",
+                difficulty: "beginner",
+                description: "This fun frog actually jumps when you press its back! A favorite for kids and beginners.",
+                imageIcon: "🐸",
+                steps: [
+                    {
+                        instruction: "Start with a square piece of paper. Fold it in half, then unfold.",
+                        imageIcon: "📄"
+                    },
+                    {
+                        instruction: "Fold the top corners down to the center line.",
+                        imageIcon: "📑"
+                    },
+                    {
+                        instruction: "Fold the bottom edge up to meet the bottom of the triangles.",
+                        imageIcon: "📝"
+                    },
+                    {
+                        instruction: "Fold the bottom corners inward along the edges of the triangles.",
+                        imageIcon: "📏"
+                    },
+                    {
+                        instruction: "Fold the entire model in half backwards.",
+                        imageIcon: "📎"
+                    },
+                    {
+                        instruction: "Fold the legs up on both sides. Your jumping frog is now ready! Press its back to make it jump.",
+                        imageIcon: "🐸"
+                    }
+                ]
+            },
+            {
+                id: 4,
+                name: "Lotus Flower",
+                difficulty: "intermediate",
+                description: "A beautiful lotus flower that blooms when placed in water.",
+                imageIcon: "🪷",
+                steps: [
+                    {
+                        instruction: "Start with a square piece of paper. Fold it in half diagonally both ways, then unfold.",
+                        imageIcon: "📄"
+                    },
+                    {
+                        instruction: "Fold each corner into the center point.",
+                        imageIcon: "📑"
+                    },
+                    {
+                        instruction: "Turn the model over, and again fold each corner into the center.",
+                        imageIcon: "📝"
+                    },
+                    {
+                        instruction: "Turn over once more, and fold each corner into the center for a third time.",
+                        imageIcon: "📏"
+                    },
+                    {
+                        instruction: "Carefully pull out each layer from the center to form the petals of the lotus.",
+                        imageIcon: "🪷"
+                    }
+                ]
+            },
+            {
+                id: 5,
+                name: "Samurai Helmet",
+                difficulty: "advanced",
+                description: "Channel your inner warrior with this impressive samurai helmet design.",
+                imageIcon: "👹",
+                steps: [
+                    {
+                        instruction: "Start with a square piece of paper. Fold it in half, then unfold.",
+                        imageIcon: "📄"
+                    },
+                    {
+                        instruction: "Fold in half in the other direction, then unfold.",
+                        imageIcon: "📑"
+                    },
+                    {
+                        instruction: "Fold all four corners to the center.",
+                        imageIcon: "📝"
+                    },
+                    {
+                        instruction: "Fold the top triangular flaps outward diagonally.",
+                        imageIcon: "📏"
+                    },
+                    {
+                        instruction: "Fold the bottom edges up to meet the center point.",
+                        imageIcon: "📎"
+                    },
+                    {
+                        instruction: "Fold the corners of the bottom flap outward.",
+                        imageIcon: "📌"
+                    },
+                    {
+                        instruction: "Make the final shaping folds and adjustments to complete your samurai helmet.",
+                        imageIcon: "👹"
+                    }
+                ]
+            },
+            {
+                id: 6,
+                name: "Paper Airplane",
+                difficulty: "beginner",
+                description: "A classic design that flies well and is perfect for beginners.",
+                imageIcon: "✈️",
+                steps: [
+                    {
+                        instruction: "Start with a rectangular piece of paper (A4 or Letter size works well).",
+                        imageIcon: "📄"
+                    },
+                    {
+                        instruction: "Fold the paper in half lengthwise, then unfold.",
+                        imageIcon: "📑"
+                    },
+                    {
+                        instruction: "Fold the top corners down to meet the center crease.",
+                        imageIcon: "📝"
+                    },
+                    {
+                        instruction: "Fold the top edges to the center line.",
+                        imageIcon: "📏"
+                    },
+                    {
+                        instruction: "Fold the entire paper in half along the original center crease.",
+                        imageIcon: "📎"
+                    },
+                    {
+                        instruction: "Fold down the wings along the top edges of the triangular body.",
+                        imageIcon: "✈️"
+                    }
+                ]
+            }
+        ];
+        
+        // DOM elements
+        const origamiList = document.getElementById('origamiList');
+        const tutorialContainer = document.getElementById('tutorialContainer');
+        const stepsContainer = document.getElementById('stepsContainer');
+        const backButton = document.getElementById('backButton');
+        const prevButton = document.getElementById('prevButton');
+        const nextButton = document.getElementById('nextButton');
+        const progressBar = document.getElementById('progressBar');
+        const tutorialTitle = document.getElementById('tutorialTitle');
+        const stepCounter = document.getElementById('stepCounter');
+        const filterButtons = document.querySelectorAll('.nav-button');
+        
+        let currentOrigamiId = null;
+        let currentStep = 1;
+        
+        // Initialize the page
+        function init() {
+            renderOrigamiList('all');
+            setupEventListeners();
+        }
+        
+        // Render the list of origami projects
+        function renderOrigamiList(filter) {
+            origamiList.innerHTML = '';
+            
+            origamiData.forEach(origami => {
+                if (filter === 'all' || origami.difficulty === filter) {
+                    const card = document.createElement('div');
+                    card.className = 'origami-card';
+                    card.dataset.id = origami.id;
+                    
+                    card.innerHTML = `
+                        <div class="origami-image">
+                            <span style="font-size: 80px;">${origami.imageIcon}</span>
+                        </div>
+                        <div class="difficulty ${origami.difficulty}">${origami.difficulty.charAt(0).toUpperCase() + origami.difficulty.slice(1)}</div>
+                        <h3>${origami.name}</h3>
+                        <p>${origami.description}</p>
+                    `;
+                    
+                    origamiList.appendChild(card);
+                }
+            });
+        }
+        
+        // Open tutorial for a specific origami
+        function openTutorial(id) {
+            const origami = origamiData.find(item => item.id === parseInt(id));
+            if (!origami) return;
+            
+            currentOrigamiId = origami.id;
+            currentStep = 1;
+            
+            // Update tutorial title
+            tutorialTitle.textContent = origami.name;
+            
+            // Create steps
+            stepsContainer.innerHTML = '';
+            origami.steps.forEach((step, index) => {
+                const stepElement = document.createElement('div');
+                stepElement.className = `step ${index === 0 ? 'active' : ''}`;
+                
+                stepElement.innerHTML = `
+                    <div class="step-content">
+                        <div class="step-image">
+                            <span style="font-size: 100px;">${step.imageIcon}</span>
+                        </div>
+                        <div class="step-instructions">
+                            <h3>Step ${index + 1}</h3>
+                            <p>${step.instruction}</p>
+                        </div>
+                    </div>
+                `;
+                
+                stepsContainer.appendChild(stepElement);
+            });
+            
+            // Update step counter and buttons
+            updateStepUI(origami);
+            
+            // Show tutorial container and hide origami list
+            origamiList.style.display = 'none';
+            tutorialContainer.classList.add('active');
+            
+            // Hide filter buttons
+            document.querySelector('.nav-container').style.display = 'none';
+        }
+        
+        // Close tutorial and go back to the list
+        function closeTutorial() {
+            tutorialContainer.classList.remove('active');
+            origamiList.style.display = 'flex';
+            document.querySelector('.nav-container').style.display = 'flex';
+            currentOrigamiId = null;
+        }
+        
+        // Navigate to previous step
+        function prevStep() {
+            if (currentStep > 1) {
+                const steps = stepsContainer.querySelectorAll('.step');
+                steps[currentStep - 1].classList.remove('active');
+                currentStep--;
+                steps[currentStep - 1].classList.add('active');
+                
+                const origami = origamiData.find(item => item.id === currentOrigamiId);
+                updateStepUI(origami);
+            }
+        }
+        
+        // Navigate to next step
+        function nextStep() {
+            const origami = origamiData.find(item => item.id === currentOrigamiId);
+            if (currentStep < origami.steps.length) {
+                const steps = stepsContainer.querySelectorAll('.step');
+                steps[currentStep - 1].classList.remove('active');
+                currentStep++;
+                steps[currentStep - 1].classList.add('active');
+                
+                updateStepUI(origami);
+            }
+        }
+        
+        // Update step navigation UI
+        function updateStepUI(origami) {
+            const totalSteps = origami.steps.length;
+            
+            // Update step counter
+            stepCounter.textContent = `Step ${currentStep} of ${totalSteps}`;
+            
+            // Update progress bar
+            progressBar.style.width = `${(currentStep / totalSteps) * 100}%`;
+            
+            // Update buttons
+            prevButton.disabled = currentStep === 1;
+            nextButton.disabled = currentStep === totalSteps;
+        }
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            // Origami card click
+            origamiList.addEventListener('click', (event) => {
+                const card = event.target.closest('.origami-card');
+                if (card) {
+                    openTutorial(card.dataset.id);
+                }
+            });
+            
+            // Back button
+            backButton.addEventListener('click', closeTutorial);
+            
+            // Navigation buttons
+            prevButton.addEventListener('click', prevStep);
+            nextButton.addEventListener('click', nextStep);
+            
+            // Filter buttons
+            filterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    renderOrigamiList(button.dataset.filter);
+                });
+            });
+        }
+        
+        // Initialize the page
+        init();
+    </script>
+</body>
+</html>

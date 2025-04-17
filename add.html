@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Attendance Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 24px;
+        }
+        
+        .date-display {
+            font-size: 18px;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .form-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        input, select, button {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+        
+        button {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        button:hover {
+            background-color: #3576c5;
+        }
+        
+        .employees-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .employees-table th, .employees-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .employees-table th {
+            font-weight: 600;
+            color: #555;
+            background-color: #f9f9f9;
+        }
+        
+        .status-present {
+            color: #28a745;
+            font-weight: 500;
+        }
+        
+        .status-absent {
+            color: #dc3545;
+            font-weight: 500;
+        }
+        
+        .status-late {
+            color: #ffc107;
+            font-weight: 500;
+        }
+        
+        .action-btn {
+            background: none;
+            border: none;
+            color: #4a90e2;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: underline;
+            padding: 0;
+        }
+        
+        .action-btn:hover {
+            color: #3576c5;
+        }
+        
+        .action-btn.delete {
+            color: #dc3545;
+        }
+        
+        .action-btn.delete:hover {
+            color: #bd2130;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-cards {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            flex: 1;
+            background: #fff;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .stat-card .count {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .present-count {
+            color: #28a745;
+        }
+        
+        .absent-count {
+            color: #dc3545;
+        }
+        
+        .late-count {
+            color: #ffc107;
+        }
+        
+        .no-records {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        @media (max-width: 768px) {
+            .form-container {
+                flex-direction: column;
+            }
+            
+            .stat-cards {
+                flex-direction: column;
+            }
+            
+            .employees-table {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Employee Attendance Tracker</h1>
+            <div class="date-display" id="currentDate"></div>
+        </header>
+        
+        <div class="stat-cards">
+            <div class="stat-card">
+                <h3>Present</h3>
+                <div class="count present-count" id="presentCount">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Late</h3>
+                <div class="count late-count" id="lateCount">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Absent</h3>
+                <div class="count absent-count" id="absentCount">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total</h3>
+                <div class="count" id="totalCount">0</div>
+            </div>
+        </div>
+        
+        <div class="form-container">
+            <input type="text" id="employeeName" placeholder="Employee Name" required>
+            <select id="attendanceStatus">
+                <option value="present">Present</option>
+                <option value="late">Late</option>
+                <option value="absent">Absent</option>
+            </select>
+            <input type="time" id="timeIn">
+            <button id="addButton">Add Record</button>
+        </div>
+        
+        <div class="filters">
+            <select id="filterStatus">
+                <option value="all">All Status</option>
+                <option value="present">Present</option>
+                <option value="late">Late</option>
+                <option value="absent">Absent</option>
+            </select>
+            <input type="date" id="filterDate">
+            <button id="resetFilter">Reset Filters</button>
+        </div>
+        
+        <table class="employees-table">
+            <thead>
+                <tr>
+                    <th>Employee Name</th>
+                    <th>Date</th>
+                    <th>Time In</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="attendanceRecords">
+                <!-- Records will be populated here -->
+            </tbody>
+        </table>
+        
+        <div id="noRecords" class="no-records">
+            No attendance records found.
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update current date
+            const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const today = new Date();
+            document.getElementById('currentDate').textContent = today.toLocaleDateString('en-US', dateOptions);
+            document.getElementById('filterDate').valueAsDate = today;
+            
+            // Load data from localStorage
+            let attendanceData = JSON.parse(localStorage.getItem('attendanceData')) || [];
+            
+            // Update table and stats on load
+            updateTable();
+            updateStats();
+            
+            // Add event listeners
+            document.getElementById('addButton').addEventListener('click', addRecord);
+            document.getElementById('filterStatus').addEventListener('change', updateTable);
+            document.getElementById('filterDate').addEventListener('change', updateTable);
+            document.getElementById('resetFilter').addEventListener('click', resetFilters);
+            
+            // Add record function
+            function addRecord() {
+                const employeeName = document.getElementById('employeeName').value.trim();
+                const status = document.getElementById('attendanceStatus').value;
+                const timeIn = document.getElementById('timeIn').value;
+                const currentDate = new Date().toISOString().split('T')[0];
+                
+                if (employeeName === '') {
+                    alert('Please enter employee name');
+                    return;
+                }
+                
+                const newRecord = {
+                    id: Date.now(), // Unique ID using timestamp
+                    name: employeeName,
+                    date: currentDate,
+                    timeIn: timeIn || '---',
+                    status: status
+                };
+                
+                attendanceData.push(newRecord);
+                saveData();
+                updateTable();
+                updateStats();
+                
+                // Reset form
+                document.getElementById('employeeName').value = '';
+                document.getElementById('attendanceStatus').value = 'present';
+                document.getElementById('timeIn').value = '';
+            }
+            
+            // Update table with filtered data
+            function updateTable() {
+                const tableBody = document.getElementById('attendanceRecords');
+                const statusFilter = document.getElementById('filterStatus').value;
+                const dateFilter = document.getElementById('filterDate').value;
+                
+                // Filter data
+                let filteredData = [...attendanceData];
+                
+                if (statusFilter !== 'all') {
+                    filteredData = filteredData.filter(record => record.status === statusFilter);
+                }
+                
+                if (dateFilter) {
+                    filteredData = filteredData.filter(record => record.date === dateFilter);
+                }
+                
+                // Clear table
+                tableBody.innerHTML = '';
+                
+                // Show or hide "no records" message
+                const noRecordsElement = document.getElementById('noRecords');
+                if (filteredData.length === 0) {
+                    noRecordsElement.style.display = 'block';
+                } else {
+                    noRecordsElement.style.display = 'none';
+                }
+                
+                // Add filtered records to table
+                filteredData.forEach(record => {
+                    const row = document.createElement('tr');
+                    
+                    // Format date for display
+                    const displayDate = new Date(record.date).toLocaleDateString('en-US');
+                    
+                    // Create status class
+                    const statusClass = `status-${record.status}`;
+                    
+                    row.innerHTML = `
+                        <td>${record.name}</td>
+                        <td>${displayDate}</td>
+                        <td>${record.timeIn}</td>
+                        <td><span class="${statusClass}">${record.status.charAt(0).toUpperCase() + record.status.slice(1)}</span></td>
+                        <td>
+                            <button class="action-btn edit" data-id="${record.id}">Edit</button>
+                            <button class="action-btn delete" data-id="${record.id}">Delete</button>
+                        </td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+                
+                // Add event listeners to action buttons
+                document.querySelectorAll('.action-btn.edit').forEach(btn => {
+                    btn.addEventListener('click', editRecord);
+                });
+                
+                document.querySelectorAll('.action-btn.delete').forEach(btn => {
+                    btn.addEventListener('click', deleteRecord);
+                });
+            }
+            
+            // Edit record function
+            function editRecord() {
+                const recordId = parseInt(this.getAttribute('data-id'));
+                const record = attendanceData.find(item => item.id === recordId);
+                
+                if (record) {
+                    const newName = prompt('Enter employee name:', record.name);
+                    if (newName !== null) {
+                        const newStatus = prompt('Enter status (present, late, or absent):', record.status);
+                        if (newStatus !== null && ['present', 'late', 'absent'].includes(newStatus.toLowerCase())) {
+                            const newTimeIn = prompt('Enter time in (HH:MM):', record.timeIn);
+                            
+                            record.name = newName.trim() || record.name;
+                            record.status = newStatus.toLowerCase();
+                            record.timeIn = newTimeIn || record.timeIn;
+                            
+                            saveData();
+                            updateTable();
+                            updateStats();
+                        } else if (newStatus !== null) {
+                            alert('Invalid status. Please use present, late, or absent.');
+                        }
+                    }
+                }
+            }
+            
+            // Delete record function
+            function deleteRecord() {
+                const recordId = parseInt(this.getAttribute('data-id'));
+                
+                if (confirm('Are you sure you want to delete this record?')) {
+                    attendanceData = attendanceData.filter(record => record.id !== recordId);
+                    saveData();
+                    updateTable();
+                    updateStats();
+                }
+            }
+            
+            // Reset filters
+            function resetFilters() {
+                document.getElementById('filterStatus').value = 'all';
+                document.getElementById('filterDate').valueAsDate = today;
+                updateTable();
+            }
+            
+            // Update statistics
+            function updateStats() {
+                const totalCount = attendanceData.length;
+                const presentCount = attendanceData.filter(record => record.status === 'present').length;
+                const lateCount = attendanceData.filter(record => record.status === 'late').length;
+                const absentCount = attendanceData.filter(record => record.status === 'absent').length;
+                
+                document.getElementById('totalCount').textContent = totalCount;
+                document.getElementById('presentCount').textContent = presentCount;
+                document.getElementById('lateCount').textContent = lateCount;
+                document.getElementById('absentCount').textContent = absentCount;
+            }
+            
+            // Save data to localStorage
+            function saveData() {
+                localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
+            }
+        });
+    </script>
+</body>
+</html>

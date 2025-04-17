@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplication Table Generator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        
+        .input-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        label {
+            font-weight: 600;
+        }
+        
+        input {
+            padding: 8px;
+            border: 2px solid #3498db;
+            border-radius: 4px;
+            width: 80px;
+            font-size: 16px;
+        }
+        
+        button {
+            padding: 8px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .table-container {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        table {
+            border-collapse: collapse;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            background-color: white;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+            min-width: 50px;
+        }
+        
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        
+        tr:hover {
+            background-color: #e5f2ff;
+        }
+        
+        .error {
+            color: #e74c3c;
+            text-align: center;
+            margin-top: 10px;
+        }
+        
+        .download-btn {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #27ae60;
+        }
+        
+        .download-btn:hover {
+            background-color: #219653;
+        }
+        
+        @media print {
+            .input-section, .download-btn {
+                display: none;
+            }
+            
+            body {
+                padding: 0;
+                background-color: white;
+            }
+            
+            table {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Multiplication Table Generator</h1>
+    
+    <div class="input-section">
+        <label for="number">Enter a number:</label>
+        <input type="number" id="number" min="1" max="100" value="10">
+        <button id="generate-btn">Generate Table</button>
+    </div>
+    
+    <div class="table-container" id="table-container"></div>
+    
+    <button class="download-btn" id="print-btn">Print Table</button>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const generateBtn = document.getElementById('generate-btn');
+            const printBtn = document.getElementById('print-btn');
+            const numberInput = document.getElementById('number');
+            const tableContainer = document.getElementById('table-container');
+            
+            // Generate table on page load with default value
+            generateTable(parseInt(numberInput.value));
+            
+            // Generate table when button is clicked
+            generateBtn.addEventListener('click', function() {
+                generateTable(parseInt(numberInput.value));
+            });
+            
+            // Generate table when Enter key is pressed in the input field
+            numberInput.addEventListener('keyup', function(event) {
+                if (event.key === "Enter") {
+                    generateTable(parseInt(numberInput.value));
+                }
+            });
+            
+            // Print the table
+            printBtn.addEventListener('click', function() {
+                window.print();
+            });
+            
+            // Function to generate the multiplication table
+            function generateTable(num) {
+                // Clear previous error messages
+                const prevError = document.querySelector('.error');
+                if (prevError) {
+                    prevError.remove();
+                }
+                
+                // Validate input
+                if (isNaN(num) || num < 1 || num > 100) {
+                    const errorMsg = document.createElement('div');
+                    errorMsg.className = 'error';
+                    errorMsg.textContent = 'Please enter a number between 1 and 100.';
+                    tableContainer.innerHTML = '';
+                    tableContainer.appendChild(errorMsg);
+                    return;
+                }
+                
+                // Create table
+                const table = document.createElement('table');
+                const headerRow = document.createElement('tr');
+                
+                // Add empty cell for top-left corner
+                const cornerCell = document.createElement('th');
+                headerRow.appendChild(cornerCell);
+                
+                // Add header row with numbers 1 to num
+                for (let i = 1; i <= num; i++) {
+                    const th = document.createElement('th');
+                    th.textContent = i;
+                    headerRow.appendChild(th);
+                }
+                
+                table.appendChild(headerRow);
+                
+                // Create rows and cells for the multiplication table
+                for (let i = 1; i <= num; i++) {
+                    const row = document.createElement('tr');
+                    
+                    // Add row header
+                    const rowHeader = document.createElement('th');
+                    rowHeader.textContent = i;
+                    row.appendChild(rowHeader);
+                    
+                    // Add cells with multiplication results
+                    for (let j = 1; j <= num; j++) {
+                        const cell = document.createElement('td');
+                        cell.textContent = i * j;
+                        row.appendChild(cell);
+                    }
+                    
+                    table.appendChild(row);
+                }
+                
+                // Clear and append the new table
+                tableContainer.innerHTML = '';
+                tableContainer.appendChild(table);
+            }
+        });
+    </script>
+</body>
+</html>
