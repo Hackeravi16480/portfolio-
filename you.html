@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Strength Checker</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 500px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .password-field {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px 45px 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #777;
+            user-select: none;
+        }
+        
+        .strength-meter {
+            height: 10px;
+            background-color: #eee;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .strength-meter-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.3s ease, background-color 0.3s ease;
+            width: 0;
+        }
+        
+        .strength-text {
+            margin-bottom: 15px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .feedback {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .feedback h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .feedback ul {
+            padding-left: 20px;
+        }
+        
+        .feedback li {
+            margin-bottom: 5px;
+        }
+        
+        .criteria {
+            margin-top: 20px;
+        }
+        
+        .criteria-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .criteria-icon {
+            margin-right: 10px;
+            color: #ccc;
+            font-weight: bold;
+        }
+        
+        .criteria-text {
+            color: #666;
+        }
+        
+        .met {
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Password Strength Checker</h1>
+        
+        <div class="password-field">
+            <input type="password" id="password" placeholder="Enter a password" autocomplete="off">
+            <span class="toggle-password" id="toggle-password">👁️</span>
+        </div>
+        
+        <div class="strength-meter">
+            <div class="strength-meter-fill" id="strength-meter-fill"></div>
+        </div>
+        
+        <div class="strength-text" id="strength-text">Password strength</div>
+        
+        <div class="criteria">
+            <div class="criteria-item">
+                <span class="criteria-icon" id="length-icon">○</span>
+                <span class="criteria-text">At least 8 characters</span>
+            </div>
+            <div class="criteria-item">
+                <span class="criteria-icon" id="lowercase-icon">○</span>
+                <span class="criteria-text">Lowercase letter</span>
+            </div>
+            <div class="criteria-item">
+                <span class="criteria-icon" id="uppercase-icon">○</span>
+                <span class="criteria-text">Uppercase letter</span>
+            </div>
+            <div class="criteria-item">
+                <span class="criteria-icon" id="number-icon">○</span>
+                <span class="criteria-text">Number</span>
+            </div>
+            <div class="criteria-item">
+                <span class="criteria-icon" id="special-icon">○</span>
+                <span class="criteria-text">Special character</span>
+            </div>
+        </div>
+        
+        <div class="feedback" id="feedback">
+            <h3>Suggestions for improvement:</h3>
+            <ul id="suggestions">
+                <li>Enter a password to see suggestions</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const passwordInput = document.getElementById('password');
+            const togglePassword = document.getElementById('toggle-password');
+            const strengthMeterFill = document.getElementById('strength-meter-fill');
+            const strengthText = document.getElementById('strength-text');
+            const suggestions = document.getElementById('suggestions');
+            
+            const lengthIcon = document.getElementById('length-icon');
+            const lowercaseIcon = document.getElementById('lowercase-icon');
+            const uppercaseIcon = document.getElementById('uppercase-icon');
+            const numberIcon = document.getElementById('number-icon');
+            const specialIcon = document.getElementById('special-icon');
+            
+            // Toggle password visibility
+            togglePassword.addEventListener('click', function() {
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    togglePassword.textContent = '👁️‍🗨️';
+                } else {
+                    passwordInput.type = 'password';
+                    togglePassword.textContent = '👁️';
+                }
+            });
+            
+            // Check password strength on input
+            passwordInput.addEventListener('input', checkPasswordStrength);
+            
+            function checkPasswordStrength() {
+                const password = passwordInput.value;
+                
+                // Reset criteria icons
+                lengthIcon.textContent = '○';
+                lowercaseIcon.textContent = '○';
+                uppercaseIcon.textContent = '○';
+                numberIcon.textContent = '○';
+                specialIcon.textContent = '○';
+                
+                lengthIcon.classList.remove('met');
+                lowercaseIcon.classList.remove('met');
+                uppercaseIcon.classList.remove('met');
+                numberIcon.classList.remove('met');
+                specialIcon.classList.remove('met');
+                
+                // Check each criteria
+                const hasLength = password.length >= 8;
+                const hasLowercase = /[a-z]/.test(password);
+                const hasUppercase = /[A-Z]/.test(password);
+                const hasNumber = /[0-9]/.test(password);
+                const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+                
+                // Update criteria icons
+                if (hasLength) {
+                    lengthIcon.textContent = '✓';
+                    lengthIcon.classList.add('met');
+                }
+                if (hasLowercase) {
+                    lowercaseIcon.textContent = '✓';
+                    lowercaseIcon.classList.add('met');
+                }
+                if (hasUppercase) {
+                    uppercaseIcon.textContent = '✓';
+                    uppercaseIcon.classList.add('met');
+                }
+                if (hasNumber) {
+                    numberIcon.textContent = '✓';
+                    numberIcon.classList.add('met');
+                }
+                if (hasSpecial) {
+                    specialIcon.textContent = '✓';
+                    specialIcon.classList.add('met');
+                }
+                
+                // Calculate strength score (0-100)
+                let score = 0;
+                
+                // Base score from length
+                if (password.length >= 8) score += 20;
+                if (password.length >= 12) score += 10;
+                if (password.length >= 16) score += 10;
+                
+                // Add points for character types
+                if (hasLowercase) score += 10;
+                if (hasUppercase) score += 15;
+                if (hasNumber) score += 15;
+                if (hasSpecial) score += 20;
+                
+                // Penalize for patterns
+                if (/^[0-9]+$/.test(password)) score -= 10; // Only numbers
+                if (/^[a-zA-Z]+$/.test(password)) score -= 10; // Only letters
+                if (/(.)\1{2,}/.test(password)) score -= 10; // Repeated characters
+                
+                // Penalize for common words/patterns
+                const commonPatterns = ['password', '123456', 'qwerty', 'admin', 'welcome', 'abc123'];
+                if (commonPatterns.some(pattern => password.toLowerCase().includes(pattern))) {
+                    score -= 20;
+                }
+                
+                // Ensure score stays within 0-100 range
+                score = Math.max(0, Math.min(100, score));
+                
+                // Update strength meter
+                strengthMeterFill.style.width = `${score}%`;
+                
+                // Set color based on score
+                let color;
+                let strengthDescription;
+                
+                if (score < 20) {
+                    color = '#ff4d4d'; // Red
+                    strengthDescription = 'Very Weak';
+                } else if (score < 40) {
+                    color = '#ffa64d'; // Orange
+                    strengthDescription = 'Weak';
+                } else if (score < 60) {
+                    color = '#ffff4d'; // Yellow
+                    strengthDescription = 'Moderate';
+                } else if (score < 80) {
+                    color = '#4dff4d'; // Light Green
+                    strengthDescription = 'Strong';
+                } else {
+                    color = '#2e8b57'; // Dark Green
+                    strengthDescription = 'Very Strong';
+                }
+                
+                strengthMeterFill.style.backgroundColor = color;
+                strengthText.textContent = password ? `Password Strength: ${strengthDescription}` : 'Password Strength';
+                strengthText.style.color = color;
+                
+                // Generate suggestions
+                generateSuggestions(password, hasLength, hasLowercase, hasUppercase, hasNumber, hasSpecial);
+            }
+            
+            function generateSuggestions(password, hasLength, hasLowercase, hasUppercase, hasNumber, hasSpecial) {
+                const suggestionsList = [];
+                
+                if (!password) {
+                    suggestions.innerHTML = '<li>Enter a password to see suggestions</li>';
+                    return;
+                }
+                
+                if (!hasLength) {
+                    suggestionsList.push('Make your password at least 8 characters long');
+                }
+                
+                if (!hasLowercase) {
+                    suggestionsList.push('Add lowercase letters (a-z)');
+                }
+                
+                if (!hasUppercase) {
+                    suggestionsList.push('Add uppercase letters (A-Z)');
+                }
+                
+                if (!hasNumber) {
+                    suggestionsList.push('Add numbers (0-9)');
+                }
+                
+                if (!hasSpecial) {
+                    suggestionsList.push('Add special characters (!, @, #, etc.)');
+                }
+                
+                if (/(.)\1{2,}/.test(password)) {
+                    suggestionsList.push('Avoid repeating characters (like "aaa" or "111")');
+                }
+                
+                if (/^[0-9]+$/.test(password)) {
+                    suggestionsList.push('Using only numbers is insecure; mix with letters and symbols');
+                }
+                
+                if (/^[a-zA-Z]+$/.test(password)) {
+                    suggestionsList.push('Using only letters is insecure; add numbers and symbols');
+                }
+                
+                const commonWords = ['password', '123456', 'qwerty', 'admin', 'welcome', 'abc123'];
+                if (commonWords.some(word => password.toLowerCase().includes(word))) {
+                    suggestionsList.push('Avoid common words or patterns like "password" or "123456"');
+                }
+                
+                if (password.length < 12 && hasLength) {
+                    suggestionsList.push('Consider using a longer password (12+ characters) for better security');
+                }
+                
+                // Additional advanced suggestions
+                if (password.length >= 8 && hasLowercase && hasUppercase && hasNumber && hasSpecial) {
+                    if (password.length < 16) {
+                        suggestionsList.push('Your password is good, but could be stronger with 16+ characters');
+                    } else {
+                        suggestionsList.push('Great password! Consider using a password manager to store it safely');
+                    }
+                }
+                
+                // Display suggestions
+                if (suggestionsList.length === 0) {
+                    suggestions.innerHTML = '<li>Your password meets all basic security criteria!</li>';
+                } else {
+                    suggestions.innerHTML = suggestionsList.map(suggestion => `<li>${suggestion}</li>`).join('');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
