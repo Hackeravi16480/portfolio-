@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whack-a-Mole Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #8bc34a;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .game-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #4caf50;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+        
+        .mole.whacked {
+            transform: translateY(50%);
+            transition: transform 0.1s ease-in;
+        }
+        
+        h1 {
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .field {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .hole {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%;
+            background-color: #654321;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: inset 0 10px 10px rgba(0, 0, 0, 0.4);
+        }
+        
+        .mole {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            bottom: 0;
+            left: 10%;
+            background-color: #a0522d;
+            border-radius: 50% 50% 0 0;
+            cursor: pointer;
+            transition: bottom 0.1s;
+            transform: translateY(100%);
+        }
+        
+        .mole.active {
+            transform: translateY(0);
+        }
+        
+        .mole .face {
+            position: absolute;
+            width: 60%;
+            height: 40%;
+            top: 20%;
+            left: 20%;
+            background-color: #f8c8a0;
+            border-radius: 50% 50% 50% 50%;
+        }
+        
+        .mole .eye {
+            position: absolute;
+            width: 15%;
+            height: 15%;
+            background-color: #000;
+            border-radius: 50%;
+            top: 30%;
+        }
+        
+        .mole .eye.left {
+            left: 25%;
+        }
+        
+        .mole .eye.right {
+            right: 25%;
+        }
+        
+        .mole .nose {
+            position: absolute;
+            width: 20%;
+            height: 10%;
+            background-color: #ff9999;
+            border-radius: 50%;
+            top: 55%;
+            left: 40%;
+        }
+        
+        button {
+            background-color: #ff5722;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #e64a19;
+        }
+        
+        .level-indicator {
+            margin-top: 10px;
+            color: #fff;
+            font-weight: bold;
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            display: none;
+        }
+        
+        .game-over h2 {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        .game-over p {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Whack-a-Mole!</h1>
+        <div class="game-info">
+            <div class="score">Score: <span id="score">0</span></div>
+            <div class="timer">Time: <span id="timer">30</span>s</div>
+            <div class="high-score">High Score: <span id="high-score">0</span></div>
+        </div>
+        
+        <div class="field">
+            <div class="hole">
+                <div class="mole" data-index="0">
+                    <div class="face">
+                        <div class="eye left"></div>
+                        <div class="eye right"></div>
+                        <div class="nose"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="hole">
+                <div class="mole" data-index="1">
+                    <div class="face">
+                        <div class="eye left"></div>
+                        <div class="eye right"></div>
+                        <div class="nose"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="hole">
+                <div class="mole" data-index="2">
+                    <div class="face">
+                        <div class="eye left"></div>
+                        <div class="eye right"></div>
+                        <div class="nose"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="hole">
+                <div class="mole" data-index="3">
+                    <div class="face">
+                        <div class="eye left"></div>
+                        <div class="eye right"></div>
+                        <div class="nose"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="hole">
+                <div class="mole" data-index="4">
+                    <div class="face">
+                        <div class="eye left"></div>
+                        <div class="eye right"></div>
+                        <div class="nose"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="hole">
+                <div class="mole" data-index="5">
+                    <div class="face">
+                        <div class="eye left"></div>
+                        <div class="eye right"></div>
+                        <div class="nose"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="hole">
+                <div class="mole" data-index="6">
+                    <div class="face">
+                        <div class="eye left"></div>
+                        <div class="eye right"></div>
+                        <div class="nose"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="hole">
+                <div class="mole" data-index="7">
+                    <div class="face">
+                        <div class="eye left"></div>
+                        <div class="eye right"></div>
+                        <div class="nose"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="hole">
+                <div class="mole" data-index="8">
+                    <div class="face">
+                        <div class="eye left"></div>
+                        <div class="eye right"></div>
+                        <div class="nose"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <button id="start-button">Start Game</button>
+        <div class="level-indicator">Level: <span id="level">1</span></div>
+        
+        <div class="game-over">
+            <h2>Game Over!</h2>
+            <p>Final Score: <span id="final-score">0</span></p>
+            <p class="high-score-display">High Score: <span id="end-high-score">0</span></p>
+            <button id="restart-button">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Game variables
+            let score = 0;
+            let highScore = localStorage.getItem('whackaMoleHighScore') || 0;
+            let timeLeft = 30;
+            let level = 1;
+            let gameRunning = false;
+            let moleInterval;
+            let timeInterval;
+            let moleSpeed = 1500; // Initial speed - mole stays up for 1.5 seconds
+            let molePauseTime = 800; // Time between moles
+            let activeMole = null;
+            
+            // Cache DOM elements
+            const $moles = $('.mole');
+            const $scoreDisplay = $('#score');
+            const $timerDisplay = $('#timer');
+            const $levelDisplay = $('#level');
+            const $startButton = $('#start-button');
+            const $restartButton = $('#restart-button');
+            const $gameOver = $('.game-over');
+            const $finalScore = $('#final-score');
+            const $highScoreDisplay = $('#high-score');
+            
+            // Display initial high score
+            $highScoreDisplay.text(highScore);
+            
+            // Start game when button is clicked
+            $startButton.on('click', startGame);
+            $restartButton.on('click', function() {
+                $gameOver.hide();
+                startGame();
+            });
+            
+            // Prevent double-click selection on moles
+            $moles.on('mousedown', function(e) {
+                e.preventDefault();
+            });
+            
+            // Handle mole clicks
+            $moles.on('mousedown', function() {
+                if (gameRunning && $(this).hasClass('active')) {
+                    // Increment score
+                    score += level;
+                    $scoreDisplay.text(score);
+                    
+                    // Add whack animation
+                    $(this).removeClass('active');
+                    $(this).addClass('whacked');
+                    
+                    // Play sound effect
+                    playWhackSound();
+                    
+                    // Clear any existing timeout for this mole
+                    if (activeMole && activeMole.index === $(this).data('index')) {
+                        clearTimeout(activeMole.timeout);
+                        activeMole = null;
+                        
+                        // Schedule next mole after a short delay
+                        setTimeout(showMole, 300);
+                    }
+                    
+                    // Update high score if necessary
+                    if (score > highScore) {
+                        highScore = score;
+                        localStorage.setItem('whackaMoleHighScore', highScore);
+                        $highScoreDisplay.text(highScore);
+                    }
+                    
+                    // Remove whacked class after animation
+                    setTimeout(() => {
+                        $(this).removeClass('whacked');
+                    }, 200);
+                }
+            });
+            
+            function startGame() {
+                // Reset game state
+                score = 0;
+                timeLeft = 30;
+                level = 1;
+                moleSpeed = 1500;
+                molePauseTime = 800;
+                gameRunning = true;
+                
+                // Update displays
+                $scoreDisplay.text(score);
+                $timerDisplay.text(timeLeft);
+                $levelDisplay.text(level);
+                
+                // Hide start button during gameplay
+                $startButton.prop('disabled', true);
+                
+                // Start the mole appearance interval
+                showMole();
+                
+                // Start the countdown timer
+                timeInterval = setInterval(updateTimer, 1000);
+            }
+            
+            function updateTimer() {
+                timeLeft--;
+                $timerDisplay.text(timeLeft);
+                
+                // Level up every 10 seconds
+                if (timeLeft % 10 === 0 && timeLeft > 0) {
+                    levelUp();
+                }
+                
+                // End game when timer reaches 0
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }
+            
+            function levelUp() {
+                level++;
+                $levelDisplay.text(level);
+                
+                // Make game faster with each level
+                moleSpeed = Math.max(400, moleSpeed - 200);
+                molePauseTime = Math.max(200, molePauseTime - 100);
+            }
+            
+            function showMole() {
+                // Don't proceed if game is not running
+                if (!gameRunning) return;
+                
+                // Hide any active mole first
+                $moles.removeClass('active');
+                
+                // Pick a random mole
+                const randomIndex = Math.floor(Math.random() * $moles.length);
+                const $randomMole = $($moles[randomIndex]);
+                
+                // Show the mole
+                $randomMole.addClass('active');
+                
+                // Store active mole information
+                activeMole = {
+                    index: randomIndex,
+                    timeout: setTimeout(function() {
+                        // Hide the mole after some time
+                        if ($randomMole.hasClass('active')) {
+                            $randomMole.removeClass('active');
+                            activeMole = null;
+                            
+                            // Schedule next mole if game is still running
+                            if (gameRunning) {
+                                setTimeout(showMole, molePauseTime);
+                            }
+                        }
+                    }, moleSpeed)
+                };
+            }
+            
+            function endGame() {
+                gameRunning = false;
+                clearInterval(timeInterval);
+                
+                // Hide all moles
+                $moles.removeClass('active');
+                
+                // Enable start button again
+                $startButton.prop('disabled', false);
+                
+                // Update high score if necessary
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('whackaMoleHighScore', highScore);
+                    $highScoreDisplay.text(highScore);
+                }
+                
+                // Show game over screen
+                $finalScore.text(score);
+                $('#end-high-score').text(highScore);
+                $gameOver.fadeIn();
+            }
+            
+            function playWhackSound() {
+                // Create a simple audio effect (could be replaced with actual sound file)
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = context.createOscillator();
+                const gainNode = context.createGain();
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.value = 800;
+                gainNode.gain.value = 0.1;
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(context.destination);
+                
+                oscillator.start();
+                
+                // Short sound
+                setTimeout(function() {
+                    oscillator.stop();
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>

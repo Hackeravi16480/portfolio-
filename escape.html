@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Escape: The Hacker's Challenge</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        :root {
+            --main-bg-color: #111;
+            --text-color: #0f0;
+            --accent-color: #007acc;
+            --error-color: #ff3333;
+            --success-color: #00cc66;
+            /* Secret color clue hidden in CSS variables */
+            --secret-sequence: #123456;
+        }
+        
+        body {
+            background-color: var(--main-bg-color);
+            color: var(--text-color);
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            transition: background-color 0.5s;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            flex: 1;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px;
+            border-bottom: 1px solid var(--accent-color);
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px var(--text-color);
+        }
+        
+        .terminal {
+            background-color: #000;
+            border: 1px solid var(--accent-color);
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 0 20px rgba(0, 122, 204, 0.4);
+        }
+        
+        .room {
+            display: none;
+        }
+        
+        #start-screen {
+            display: block;
+            text-align: center;
+        }
+        
+        button {
+            background-color: var(--accent-color);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background-color: #005c99;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        input {
+            background-color: #222;
+            color: var(--text-color);
+            border: 1px solid var(--accent-color);
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .inventory {
+            background-color: #1a1a1a;
+            border: 1px solid var(--accent-color);
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 20px;
+        }
+        
+        .inventory h3 {
+            margin-top: 0;
+            border-bottom: 1px solid var(--accent-color);
+            padding-bottom: 5px;
+        }
+        
+        .inventory-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .inventory-item {
+            background-color: #333;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .game-message {
+            color: var(--accent-color);
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        
+        .error-message {
+            color: var(--error-color);
+        }
+        
+        .success-message {
+            color: var(--success-color);
+        }
+        
+        .terminal-input::before {
+            content: "> ";
+            color: var(--accent-color);
+        }
+        
+        .puzzle-container {
+            margin: 20px 0;
+        }
+        
+        /* Computer screen styling */
+        .computer-screen {
+            background-color: #001a33;
+            border: 2px solid #0066cc;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 0 30px rgba(0, 102, 204, 0.6);
+        }
+        
+        #terminal-history {
+            height: 200px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #000;
+            border: 1px solid #333;
+        }
+        
+        .terminal-line {
+            margin: 5px 0;
+        }
+        
+        #color-puzzle {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .color-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .color-button:hover {
+            transform: scale(1.1);
+        }
+        
+        #rgb-1 { background-color: #ff0000; }
+        #rgb-2 { background-color: #00ff00; }
+        #rgb-3 { background-color: #0000ff; }
+        #rgb-4 { background-color: #ffff00; }
+        #rgb-5 { background-color: #00ffff; }
+        #rgb-6 { background-color: #ff00ff; }
+        
+        #lockbox {
+            border: 2px solid var(--accent-color);
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        #keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 200px;
+            margin: 0 auto;
+        }
+        
+        .keypad-btn {
+            background-color: #333;
+            color: var(--text-color);
+            border: 1px solid var(--accent-color);
+            padding: 10px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        
+        #keypad-display {
+            background-color: #222;
+            color: var(--text-color);
+            padding: 10px;
+            margin-bottom: 10px;
+            font-family: 'Digital', 'Courier New', monospace;
+            letter-spacing: 2px;
+            font-size: 20px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .inspect-text {
+            cursor: help;
+            text-decoration: underline dotted;
+        }
+        
+        /* Comment section contains hidden clue */
+        /* .secret-command { Inspect element to find: SUDO-ACCESS } */
+        
+        .blinking {
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+        
+        .password-hint {
+            font-size: 0.8rem;
+            text-align: right;
+            color: #555;
+            margin-top: 5px;
+        }
+        
+        /* Puzzle 4: Hidden in plain sight */
+        .filing-cabinet {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .file-drawer {
+            background-color: #333;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-drawer:hover {
+            transform: translateY(-5px);
+            background-color: #444;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 0.8rem;
+            color: #555;
+            border-top: 1px solid var(--accent-color);
+        }
+
+        /* Hidden elements for puzzles */
+        .invisible-clue {
+            display: none;
+            position: absolute;
+            left: -9999px;
+        }
+        
+        /* Final escape button */
+        #escape-btn {
+            background-color: #00cc66;
+            color: #000;
+            font-weight: bold;
+            font-size: 1.2rem;
+            padding: 15px 30px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Digital Escape: The Hacker's Challenge</h1>
+        </header>
+        
+        <!-- Start Screen -->
+        <div id="start-screen" class="room terminal">
+            <h2>SYSTEM INITIALIZED</h2>
+            <p>Welcome, agent. You've been trapped in a digital prison by a rogue AI.</p>
+            <p>To escape, you must solve a series of puzzles hidden throughout this webpage.</p>
+            <p>Look carefully - clues may be hidden in the HTML, CSS, or JavaScript code.</p>
+            <button id="start-game">BEGIN MISSION</button>
+        </div>
+        
+        <!-- Room 1: Terminal Hack -->
+        <div id="room-1" class="room terminal">
+            <h2>FIRST CHALLENGE: Terminal Access</h2>
+            <p>Hack into the system by finding the correct terminal command.</p>
+            <p>Hint: <span class="inspect-text" title="Look in the CSS comments for a clue">Inspect the page carefully</span>.</p>
+            
+            <div id="terminal-history"></div>
+            
+            <div class="terminal-input">
+                <input type="text" id="terminal-command" placeholder="Enter command...">
+                <button id="submit-command">EXECUTE</button>
+            </div>
+            
+            <div class="invisible-clue" id="secret-hint"><!-- Try examining the CSS variables for secrets --></div>
+        </div>
+        
+        <!-- Room 2: Color Sequence -->
+        <div id="room-2" class="room terminal">
+            <h2>SECOND CHALLENGE: Color Sequence</h2>
+            <p>Enter the correct color sequence to unlock the next section.</p>
+            <p>Hint: The CSS holds the key - look for something <span class="inspect-text" title="Check the CSS variables">hidden in plain sight</span>.</p>
+            
+            <div id="color-puzzle">
+                <div class="color-button" id="rgb-1" data-color="1"></div>
+                <div class="color-button" id="rgb-2" data-color="2"></div>
+                <div class="color-button" id="rgb-3" data-color="3"></div>
+                <div class="color-button" id="rgb-4" data-color="4"></div>
+                <div class="color-button" id="rgb-5" data-color="5"></div>
+                <div class="color-button" id="rgb-6" data-color="6"></div>
+            </div>
+            
+            <div id="color-sequence">Current sequence: <span id="current-sequence"></span></div>
+            <button id="clear-sequence">Clear Sequence</button>
+            <button id="submit-sequence">Submit Sequence</button>
+            
+            <div class="game-message" id="color-message"></div>
+        </div>
+        
+        <!-- Room 3: Password Cracker -->
+        <div id="room-3" class="room terminal">
+            <h2>THIRD CHALLENGE: Password Cracker</h2>
+            <p>Crack the security code to access the mainframe.</p>
+            <p>Hint: The code is concealed within the source - <span class="inspect-text" title="Look at the page source">check the DOM</span>.</p>
+            
+            <div id="lockbox">
+                <div id="keypad-display">----</div>
+                <div id="keypad">
+                    <button class="keypad-btn" data-num="1">1</button>
+                    <button class="keypad-btn" data-num="2">2</button>
+                    <button class="keypad-btn" data-num="3">3</button>
+                    <button class="keypad-btn" data-num="4">4</button>
+                    <button class="keypad-btn" data-num="5">5</button>
+                    <button class="keypad-btn" data-num="6">6</button>
+                    <button class="keypad-btn" data-num="7">7</button>
+                    <button class="keypad-btn" data-num="8">8</button>
+                    <button class="keypad-btn" data-num="9">9</button>
+                    <button class="keypad-btn" data-num="C">C</button>
+                    <button class="keypad-btn" data-num="0">0</button>
+                    <button class="keypad-btn" data-num="E">E</button>
+                </div>
+            </div>
+            
+            <div class="password-hint">
+                <!-- Weak encryption: The code is "1337" -->
+            </div>
+            
+            <div class="game-message" id="password-message"></div>
+        </div>
+        
+        <!-- Room 4: File Cabinet -->
+        <div id="room-4" class="room terminal">
+            <h2>FOURTH CHALLENGE: Digital File Cabinet</h2>
+            <p>Find the master escape key hidden in one of these files.</p>
+            <p>Hint: Only one file contains the true key. The others are traps.</p>
+            
+            <div class="filing-cabinet">
+                <div class="file-drawer" id="file-1">File_01.dat</div>
+                <div class="file-drawer" id="file-2">File_02.dat</div>
+                <div class="file-drawer" id="file-3">File_03.dat</div>
+                <div class="file-drawer" id="file-4">File_04.dat</div>
+                <div class="file-drawer" id="file-5">File_05.dat</div>
+                <div class="file-drawer" id="file-6">System32.exe</div>
+                <div class="file-drawer" id="file-7">Backup.sys</div>
+                <div class="file-drawer" id="file-8">logs.txt</div>
+                <div class="file-drawer" id="file-9">escape.key</div>
+            </div>
+            
+            <div class="game-message" id="file-message"></div>
+        </div>
+        
+        <!-- Final Escape -->
+        <div id="room-final" class="room terminal">
+            <h2>SYSTEM OVERRIDE COMPLETE</h2>
+            <p>Congratulations, agent. You've successfully hacked through all security layers.</p>
+            <p>The AI prison is breaking down. Now's your chance to escape.</p>
+            <button id="escape-btn">ESCAPE</button>
+        </div>
+        
+        <!-- Victory Screen -->
+        <div id="victory-screen" class="room terminal">
+            <h2>MISSION ACCOMPLISHED</h2>
+            <p>You've successfully escaped the digital prison!</p>
+            <p>Time to escape: <span id="escape-time">00:00</span></p>
+            <button id="restart-game">PLAY AGAIN</button>
+        </div>
+        
+        <!-- Game UI Elements -->
+        <div class="inventory hidden">
+            <h3>Inventory</h3>
+            <div class="inventory-items" id="player-inventory">
+                <!-- Items will be added here -->
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>Digital Escape Room v1.0 | <span id="player-hint">Right-click and "Inspect Element" to find hidden clues</span></p>
+    </footer>
+
+    <script>
+        $(document).ready(function() {
+            // Game state
+            let gameState = {
+                startTime: null,
+                endTime: null,
+                currentRoom: "start-screen",
+                inventory: [],
+                colorSequence: [],
+                correctColorSequence: "123456", // Matches the CSS variable hex code
+                passwordCode: "1337",
+                currentPassword: "",
+                commandExecuted: false,
+                colorPuzzleSolved: false,
+                passwordCracked: false,
+                fileFound: false
+            };
+            
+            // Initialize inventory
+            updateInventory();
+            
+            // Start Game
+            $("#start-game").click(function() {
+                gameState.startTime = new Date();
+                changeRoom("room-1");
+                $(".inventory").removeClass("hidden");
+                addTerminalLine("System initialized. Terminal access required.");
+                addTerminalLine("Type 'help' for available commands.");
+            });
+            
+            // Room change function
+            function changeRoom(roomId) {
+                $(".room").hide();
+                $("#" + roomId).show();
+                gameState.currentRoom = roomId;
+            }
+            
+            // Inventory functions
+            function addToInventory(item) {
+                gameState.inventory.push(item);
+                updateInventory();
+            }
+            
+            function updateInventory() {
+                $("#player-inventory").empty();
+                gameState.inventory.forEach(function(item) {
+                    $("#player-inventory").append(`<div class="inventory-item">${item}</div>`);
+                });
+            }
+            
+            // Terminal functions
+            function addTerminalLine(text) {
+                $("#terminal-history").append(`<div class="terminal-line">${text}</div>`);
+                $("#terminal-history").scrollTop($("#terminal-history")[0].scrollHeight);
+            }
+            
+            // Handle terminal commands
+            $("#submit-command").click(function() {
+                const command = $("#terminal-command").val().trim().toLowerCase();
+                addTerminalLine(`> ${command}`);
+                
+                // Process command
+                if (command === "help") {
+                    addTerminalLine("Available commands: help, clear, status, inspect, sudo-access");
+                } else if (command === "clear") {
+                    $("#terminal-history").empty();
+                } else if (command === "status") {
+                    addTerminalLine("System locked. Administrative privileges required.");
+                } else if (command === "inspect") {
+                    addTerminalLine("Hint: Look for secrets in the CSS.");
+                } else if (command === "sudo-access") {
+                    if (!gameState.commandExecuted) {
+                        addTerminalLine("Access granted! Terminal unlocked.");
+                        gameState.commandExecuted = true;
+                        addToInventory("Admin Access");
+                        
+                        // Wait briefly then move to next room
+                        setTimeout(function() {
+                            changeRoom("room-2");
+                        }, 1500);
+                    } else {
+                        addTerminalLine("Command already executed.");
+                    }
+                } else {
+                    addTerminalLine("Unknown command. Type 'help' for available commands.");
+                }
+                
+                // Clear input
+                $("#terminal-command").val("").focus();
+            });
+            
+            // Allow enter key to submit command
+            $("#terminal-command").keypress(function(e) {
+                if (e.which === 13) {
+                    $("#submit-command").click();
+                }
+            });
+            
+            // Color Puzzle
+            $(".color-button").click(function() {
+                const color = $(this).data("color");
+                gameState.colorSequence.push(color);
+                updateColorSequence();
+            });
+            
+            $("#clear-sequence").click(function() {
+                gameState.colorSequence = [];
+                updateColorSequence();
+            });
+            
+            function updateColorSequence() {
+                $("#current-sequence").text(gameState.colorSequence.join(""));
+            }
+            
+            $("#submit-sequence").click(function() {
+                const sequence = gameState.colorSequence.join("");
+                
+                if (sequence === gameState.correctColorSequence) {
+                    $("#color-message").removeClass("error-message").addClass("success-message")
+                        .text("Correct sequence! Access granted.");
+                    gameState.colorPuzzleSolved = true;
+                    addToInventory("Color Key");
+                    
+                    // Wait briefly then move to next room
+                    setTimeout(function() {
+                        changeRoom("room-3");
+                    }, 1500);
+                } else {
+                    $("#color-message").removeClass("success-message").addClass("error-message")
+                        .text("Incorrect sequence. Try again.");
+                    // Clear the sequence
+                    gameState.colorSequence = [];
+                    updateColorSequence();
+                }
+            });
+            
+            // Password Cracker
+            $(".keypad-btn").click(function() {
+                const value = $(this).data("num");
+                
+                if (value === "C") {
+                    // Clear
+                    gameState.currentPassword = "";
+                } else if (value === "E") {
+                    // Enter/submit
+                    if (gameState.currentPassword === gameState.passwordCode) {
+                        $("#password-message").removeClass("error-message").addClass("success-message")
+                            .text("Password accepted! Security disabled.");
+                        gameState.passwordCracked = true;
+                        addToInventory("Security Override");
+                        
+                        // Wait briefly then move to next room
+                        setTimeout(function() {
+                            changeRoom("room-4");
+                        }, 1500);
+                    } else {
+                        $("#password-message").removeClass("success-message").addClass("error-message")
+                            .text("Incorrect password! Access denied.");
+                        gameState.currentPassword = "";
+                    }
+                } else {
+                    // Add digit if less than 4 characters
+                    if (gameState.currentPassword.length < 4) {
+                        gameState.currentPassword += value;
+                    }
+                }
+                
+                // Update display
+                $("#keypad-display").text(gameState.currentPassword.padEnd(4, '-'));
+            });
+            
+            // File Cabinet Puzzle
+            $(".file-drawer").click(function() {
+                const fileId = $(this).attr("id");
+                
+                // Clear previous messages
+                $("#file-message").removeClass("success-message error-message").text("");
+                
+                // Check if it's the correct file
+                if (fileId === "file-9") {
+                    $("#file-message").addClass("success-message")
+                        .text("You found the escape key! System override activated.");
+                    gameState.fileFound = true;
+                    addToInventory("Master Key");
+                    
+                    // Wait briefly then move to final room
+                    setTimeout(function() {
+                        changeRoom("room-final");
+                    }, 1500);
+                } else if (fileId === "file-6") {
+                    $("#file-message").addClass("error-message")
+                        .text("Warning: System file! Do not delete.");
+                } else {
+                    $("#file-message").addClass("error-message")
+                        .text("Empty file. Nothing useful here.");
+                }
+            });
+            
+            // Final escape button
+            $("#escape-btn").click(function() {
+                gameState.endTime = new Date();
+                const timeDiff = (gameState.endTime - gameState.startTime) / 1000; // in seconds
+                const minutes = Math.floor(timeDiff / 60);
+                const seconds = Math.floor(timeDiff % 60);
+                $("#escape-time").text(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+                changeRoom("victory-screen");
+            });
+            
+            // Restart game
+            $("#restart-game").click(function() {
+                // Reset game state
+                gameState = {
+                    startTime: null,
+                    endTime: null,
+                    currentRoom: "start-screen",
+                    inventory: [],
+                    colorSequence: [],
+                    correctColorSequence: "123456",
+                    passwordCode: "1337",
+                    currentPassword: "",
+                    commandExecuted: false,
+                    colorPuzzleSolved: false,
+                    passwordCracked: false,
+                    fileFound: false
+                };
+                
+                // Clear terminal history
+                $("#terminal-history").empty();
+                
+                // Clear color sequence
+                updateColorSequence();
+                
+                // Clear messages
+                $(".game-message").text("");
+                
+                // Update inventory
+                updateInventory();
+                
+                // Reset keypad display
+                $("#keypad-display").text("----");
+                
+                // Hide inventory
+                $(".inventory").addClass("hidden");
+                
+                // Go to start screen
+                changeRoom("start-screen");
+            });
+            
+            // Add key commands for advanced players
+            $(document).keydown(function(e) {
+                // Shift + Alt + D for developer hints (Easter egg)
+                if (e.shiftKey && e.altKey && e.which === 68) {
+                    alert("Developer hints activated!\n\n" +
+                          "Puzzle 1: Check CSS comments for 'sudo-access'\n" +
+                          "Puzzle 2: CSS variable '--secret-sequence: #123456'\n" +
+                          "Puzzle 3: Password is '1337' in HTML comments\n" +
+                          "Puzzle 4: 'escape.key' is file-9");
+                }
+            });
+        });
+    </script>
+</body>
+</html>

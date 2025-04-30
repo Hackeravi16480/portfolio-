@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brick Breaker Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #1a1a2e;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            color: white;
+        }
+        #game-container {
+            position: relative;
+            width: 480px;
+            height: 640px;
+            border: 2px solid #4ecca3;
+            border-radius: 5px;
+            overflow: hidden;
+            background: #16213e;
+            box-shadow: 0 0 20px rgba(78, 204, 163, 0.5);
+        }
+        #paddle {
+            position: absolute;
+            width: 100px;
+            height: 20px;
+            bottom: 30px;
+            background: #e94560;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(233, 69, 96, 0.7);
+        }
+        #ball {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #4ecca3;
+            border-radius: 50%;
+            box-shadow: 0 0 5px rgba(78, 204, 163, 0.7);
+        }
+        .brick {
+            position: absolute;
+            width: 58px;
+            height: 25px;
+            background: #e94560;
+            border-radius: 3px;
+            box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+        #score-container {
+            display: flex;
+            justify-content: space-between;
+            width: 480px;
+            margin-top: 10px;
+            font-size: 1.2rem;
+        }
+        #high-score-container {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 1.2rem;
+            color: #4ecca3;
+        }
+        #start-screen, #level-screen, #game-over-screen {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(22, 33, 62, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .instructions {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 0.9rem;
+            max-width: 80%;
+        }
+        .btn {
+            background: #4ecca3;
+            color: #1a1a2e;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            border-radius: 5px;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background: #e94560;
+            color: white;
+            transform: scale(1.05);
+        }
+        h1 {
+            color: #4ecca3;
+            margin-bottom: 10px;
+        }
+        h2 {
+            color: #e94560;
+            margin-top: 0;
+        }
+        .level-indicator {
+            font-size: 3rem;
+            color: #4ecca3;
+            margin: 20px 0;
+        }
+        #game-over-screen {
+            display: none;
+        }
+        #level-screen {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>BRICK BREAKER</h1>
+    <div id="game-container">
+        <div id="start-screen">
+            <h2>Brick Breaker</h2>
+            <div class="instructions">
+                <p>Use the mouse or arrow keys to move the paddle</p>
+                <p>Click or press SPACE to launch the ball</p>
+                <p>Break all the bricks to advance to the next level</p>
+            </div>
+            <button id="start-btn" class="btn">START GAME</button>
+        </div>
+        <div id="level-screen">
+            <h2>LEVEL</h2>
+            <div class="level-indicator">1</div>
+            <p>Get Ready!</p>
+        </div>
+        <div id="game-over-screen">
+            <h2>GAME OVER</h2>
+            <p>Your final score: <span id="final-score">0</span></p>
+            <p>You reached level: <span id="final-level">1</span></p>
+            <button id="restart-btn" class="btn">PLAY AGAIN</button>
+        </div>
+        <div id="paddle"></div>
+        <div id="ball"></div>
+    </div>
+    <div id="score-container">
+        <div>SCORE: <span id="score">0</span></div>
+        <div>LIVES: <span id="lives">3</span></div>
+        <div>LEVEL: <span id="level">1</span></div>
+    </div>
+    <div id="high-score-container">HIGH SCORE: <span id="high-score">0</span></div>
+
+    <script>
+        $(document).ready(function() {
+            // Game variables
+            const gameContainer = $('#game-container');
+            const containerWidth = gameContainer.width();
+            const containerHeight = gameContainer.height();
+            const paddle = $('#paddle');
+            const ball = $('#ball');
+            const startScreen = $('#start-screen');
+            const levelScreen = $('#level-screen');
+            const gameOverScreen = $('#game-over-screen');
+            const scoreElement = $('#score');
+            const livesElement = $('#lives');
+            const levelElement = $('#level');
+            const finalScoreElement = $('#final-score');
+            const finalLevelElement = $('#final-level');
+            const levelIndicator = $('.level-indicator');
+            const highScoreElement = $('#high-score');
+
+            let gameRunning = false;
+            let paddleWidth = paddle.width();
+            let paddleHeight = paddle.height();
+            let ballSize = ball.width();
+            let paddleX = (containerWidth - paddleWidth) / 2;
+            let ballX = paddleX + paddleWidth / 2 - ballSize / 2;
+            let ballY = containerHeight - paddleHeight - 30 - ballSize;
+            let ballSpeedX = 0;
+            let ballSpeedY = 0;
+            let baseSpeed = 5;
+            let maxBallSpeed = 10; // Maximum ball speed to prevent physics issues
+            let score = 0;
+            let highScore = loadHighScore();
+            let lives = 3;
+            let level = 1;
+            let bricks = [];
+            let brickRows = 4;
+            let brickCols = 8;
+            let brickWidth = 58;
+            let brickHeight = 25;
+            let brickPadding = 2;
+            let bricksLeft = 0;
+            let gameInterval;
+            let ballMovingWithPaddle = true;
+            
+            // Load high score from localStorage
+            function loadHighScore() {
+                const savedHighScore = localStorage.getItem('brickBreakerHighScore');
+                return savedHighScore ? parseInt(savedHighScore) : 0;
+            }
+            
+            // Save high score to localStorage
+            function saveHighScore(newScore) {
+                localStorage.setItem('brickBreakerHighScore', newScore);
+            }
+            
+            // Update high score display
+            highScoreElement.text(highScore);
+
+            // Initialize paddle and ball positions
+            paddle.css({left: paddleX});
+            ball.css({left: ballX, top: ballY});
+
+            // Start game when button is clicked
+            $('#start-btn').on('click', function() {
+                startScreen.fadeOut(500);
+                setTimeout(function() {
+                    showLevelScreen();
+                }, 500);
+            });
+
+            // Restart game when button is clicked
+            $('#restart-btn').on('click', function() {
+                gameOverScreen.fadeOut(500);
+                resetGame();
+                setTimeout(function() {
+                    showLevelScreen();
+                }, 500);
+            });
+            
+            // Also start game on spacebar press when not running
+            $(document).on('keydown', function(e) {
+                if (e.keyCode === 32) { // Space bar
+                    if (!gameRunning && !startScreen.is(':visible') && !levelScreen.is(':visible') && !gameOverScreen.is(':visible')) {
+                        // Release ball from paddle
+                        ballMovingWithPaddle = false;
+                        resumeGame();
+                    } else if (startScreen.is(':visible')) {
+                        // Start game from start screen
+                        startScreen.fadeOut(500);
+                        setTimeout(function() {
+                            showLevelScreen();
+                        }, 500);
+                    } else if (gameOverScreen.is(':visible')) {
+                        // Restart game from game over screen
+                        gameOverScreen.fadeOut(500);
+                        resetGame();
+                        setTimeout(function() {
+                            showLevelScreen();
+                        }, 500);
+                    }
+                }
+            });
+
+            // Show level screen
+            function showLevelScreen() {
+                levelIndicator.text(level);
+                levelScreen.fadeIn(500);
+                setTimeout(function() {
+                    levelScreen.fadeOut(500);
+                    setTimeout(startGame, 500);
+                }, 1500);
+            }
+
+            // Initialize game
+            function startGame() {
+                if (!gameRunning) {
+                    createBricks();
+                    gameRunning = true;
+                    ballMovingWithPaddle = true;
+                    resetBallOnPaddle();
+                    gameInterval = setInterval(updateGame, 16); // ~60fps
+                }
+            }
+
+            // Create bricks layout
+            function createBricks() {
+                bricks = [];
+                bricksLeft = 0;
+                
+                // Clear any existing bricks
+                $('.brick').remove();
+                
+                // Calculate offset to center bricks
+                const totalBrickWidth = brickCols * (brickWidth + brickPadding) - brickPadding;
+                const offsetX = (containerWidth - totalBrickWidth) / 2;
+                
+                for (let r = 0; r < brickRows; r++) {
+                    for (let c = 0; c < brickCols; c++) {
+                        const brickX = c * (brickWidth + brickPadding) + offsetX;
+                        const brickY = r * (brickHeight + brickPadding) + 50;
+                        
+                        // Create brick and add to DOM
+                        const brick = $('<div class="brick"></div>');
+                        gameContainer.append(brick);
+                        
+                        // Set brick position
+                        brick.css({
+                            left: brickX,
+                            top: brickY,
+                            background: getColorByRow(r)
+                        });
+                        
+                        // Add brick data to array
+                        bricks.push({
+                            x: brickX,
+                            y: brickY,
+                            width: brickWidth,
+                            height: brickHeight,
+                            element: brick,
+                            hit: false
+                        });
+                        
+                        bricksLeft++;
+                    }
+                }
+            }
+            
+            // Get color by row
+            function getColorByRow(row) {
+                const colors = ['#e94560', '#ff9a3c', '#4ecca3', '#3ec1d3'];
+                return colors[row % colors.length];
+            }
+
+            // Reset ball position on paddle
+            function resetBallOnPaddle() {
+                ballX = paddleX + paddleWidth / 2 - ballSize / 2;
+                ballY = containerHeight - paddleHeight - 30 - ballSize;
+                ballSpeedX = 0;
+                ballSpeedY = 0;
+                ball.css({left: ballX, top: ballY});
+            }
+            
+            // Update game state
+            function updateGame() {
+                // If ball is attached to paddle, move it with the paddle
+                if (ballMovingWithPaddle) {
+                    ballX = paddleX + paddleWidth / 2 - ballSize / 2;
+                    ballY = containerHeight - paddleHeight - 30 - ballSize;
+                } else {
+                    // Regular ball movement
+                    ballX += ballSpeedX;
+                    ballY += ballSpeedY;
+                }
+                
+                // Check for collision with walls
+                if (ballX <= 0) {
+                    ballX = 0; // Prevent ball from going outside container
+                    ballSpeedX = Math.abs(ballSpeedX); // Ensure it bounces right
+                } else if (ballX + ballSize >= containerWidth) {
+                    ballX = containerWidth - ballSize; // Prevent ball from going outside container
+                    ballSpeedX = -Math.abs(ballSpeedX); // Ensure it bounces left
+                }
+                
+                // Check for collision with ceiling
+                if (ballY <= 0) {
+                    ballY = 0; // Prevent ball from going above container
+                    ballSpeedY = Math.abs(ballSpeedY); // Ensure it bounces down
+                }
+                
+                // Check for collision with paddle
+                if (!ballMovingWithPaddle && 
+                    ballY + ballSize >= containerHeight - paddleHeight - 30 && 
+                    ballY < containerHeight - 30 &&
+                    ballX + ballSize > paddleX && 
+                    ballX < paddleX + paddleWidth) {
+                    
+                    // Calculate reflection angle based on where ball hits paddle
+                    const hitPosition = (ballX + ballSize/2) - (paddleX + paddleWidth/2);
+                    const normalizedHit = hitPosition / (paddleWidth/2);
+                    
+                    // Calculate new speeds with better physics
+                    ballSpeedX = normalizedHit * (baseSpeed + level * 0.5);
+                    ballSpeedY = -Math.abs(ballSpeedY); // Ensure ball goes up
+                    
+                    // Ensure minimum vertical speed
+                    if (Math.abs(ballSpeedY) < baseSpeed * 0.5) {
+                        ballSpeedY = -baseSpeed * 0.5;
+                    }
+                    
+                    // Add a slight speed increase for excitement but cap maximum speed
+                    const currentSpeed = Math.sqrt(ballSpeedX * ballSpeedX + ballSpeedY * ballSpeedY);
+                    if (currentSpeed < baseSpeed * 1.5) {
+                        const speedFactor = baseSpeed * 1.5 / currentSpeed;
+                        ballSpeedX *= speedFactor;
+                        ballSpeedY *= speedFactor;
+                    }
+                    
+                    // Cap maximum speeds to prevent physics issues
+                    ballSpeedX = Math.min(Math.max(ballSpeedX, -maxBallSpeed), maxBallSpeed);
+                    ballSpeedY = Math.min(Math.max(ballSpeedY, -maxBallSpeed), maxBallSpeed);
+                    
+                    // Ensure ball doesn't get stuck in paddle
+                    ballY = containerHeight - paddleHeight - 30 - ballSize;
+                }
+                
+                // Check if ball is out of bounds (player loses a life)
+                if (ballY + ballSize >= containerHeight) {
+                    lives--;
+                    livesElement.text(lives);
+                    
+                    if (lives <= 0) {
+                        gameOver();
+                    } else {
+                        resetBall();
+                    }
+                }
+                
+                // Check for collision with bricks
+                for (let i = 0; i < bricks.length; i++) {
+                    const brick = bricks[i];
+                    if (!brick.hit &&
+                        ballX + ballSize >= brick.x && 
+                        ballX <= brick.x + brick.width &&
+                        ballY + ballSize >= brick.y &&
+                        ballY <= brick.y + brick.height) {
+                        
+                        // Mark brick as hit
+                        brick.hit = true;
+                        brick.element.fadeOut(300, function() {
+                            $(this).remove();
+                        });
+                        
+                        // Update score
+                        score += 10 * level;
+                        scoreElement.text(score);
+                        
+                        // Determine ball reflection direction
+                        const overlapLeft = (ballX + ballSize) - brick.x;
+                        const overlapRight = (brick.x + brick.width) - ballX;
+                        const overlapTop = (ballY + ballSize) - brick.y;
+                        const overlapBottom = (brick.y + brick.height) - ballY;
+                        
+                        // Find the smallest overlap
+                        const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+                        
+                        if (minOverlap === overlapLeft || minOverlap === overlapRight) {
+                            ballSpeedX = -ballSpeedX;
+                        } else {
+                            ballSpeedY = -ballSpeedY;
+                        }
+                        
+                        // Count remaining bricks
+                        bricksLeft--;
+                        
+                        // Check if level is cleared
+                        if (bricksLeft === 0) {
+                            levelUp();
+                        }
+                        
+                        // Only handle one collision per frame
+                        break;
+                    }
+                }
+                
+                // Update ball position
+                ball.css({left: ballX, top: ballY});
+            }
+
+            // Reset ball position
+            function resetBall() {
+                pauseGame();
+                ballMovingWithPaddle = true;
+                resetBallOnPaddle();
+                
+                // Wait a moment before continuing
+                setTimeout(function() {
+                    resumeGame();
+                }, 1000);
+            }
+
+            // Level up
+            function levelUp() {
+                level++;
+                levelElement.text(level);
+                
+                // Increase difficulty
+                brickRows = Math.min(brickRows + 1, 8);
+                baseSpeed += 0.5;
+                
+                pauseGame();
+                setTimeout(function() {
+                    showLevelScreen();
+                }, 1000);
+            }
+
+            // Game over
+            function gameOver() {
+                pauseGame();
+                
+                // Check for high score
+                if (score > highScore) {
+                    highScore = score;
+                    saveHighScore(highScore);
+                    highScoreElement.text(highScore);
+                }
+                
+                finalScoreElement.text(score);
+                finalLevelElement.text(level);
+                gameOverScreen.fadeIn(500);
+            }
+
+            // Pause game
+            function pauseGame() {
+                gameRunning = false;
+                clearInterval(gameInterval);
+            }
+
+            // Resume game
+            function resumeGame() {
+                if (!gameRunning) {
+                    gameRunning = true;
+                    gameInterval = setInterval(updateGame, 16);
+                }
+            }
+
+            // Reset game
+            function resetGame() {
+                pauseGame();
+                score = 0;
+                lives = 3;
+                level = 1;
+                baseSpeed = 5;
+                brickRows = 4;
+                scoreElement.text(score);
+                livesElement.text(lives);
+                levelElement.text(level);
+                paddleX = (containerWidth - paddleWidth) / 2;
+                paddle.css({left: paddleX});
+                resetBall();
+            }
+
+            // Mouse move event for paddle control
+            gameContainer.on('mousemove', function(e) {
+                const containerOffset = gameContainer.offset();
+                const relativeX = e.pageX - containerOffset.left;
+                paddleX = Math.max(0, Math.min(containerWidth - paddleWidth, relativeX - paddleWidth / 2));
+                paddle.css({left: paddleX});
+            });
+
+            // Click event to release ball if it's on the paddle
+            gameContainer.on('click', function() {
+                if (gameRunning && ballMovingWithPaddle) {
+                    ballMovingWithPaddle = false;
+                    ballSpeedX = level > 1 ? baseSpeed * 0.6 : baseSpeed * 0.5;
+                    ballSpeedY = -baseSpeed;
+                }
+            });
+
+            // Keyboard controls
+            $(document).on('keydown', function(e) {
+                const step = 20;
+                
+                if (e.keyCode === 37) { // Left arrow
+                    paddleX = Math.max(0, paddleX - step);
+                } else if (e.keyCode === 39) { // Right arrow
+                    paddleX = Math.min(containerWidth - paddleWidth, paddleX + step);
+                }
+                
+                paddle.css({left: paddleX});
+            });
+
+            // Prevent scrolling when using arrow keys
+            $(window).on('keydown', function(e) {
+                if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
